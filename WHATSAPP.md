@@ -61,6 +61,54 @@ Esto aplica solo a la migración final: el número de prueba de Meta no lo neces
 
 ---
 
+## Estado real de la cuenta de Meta (relevado el 2026-08-07)
+
+Se recorrió la cuenta entera. Esto es lo que hay, y difiere bastante de lo que se suponía:
+
+| Qué | Estado |
+|---|---|
+| Portafolio empresarial | ✅ **"Los Gladiolos Alojamiento"** — `business_id` `456438748546584`. (Hay un segundo portafolio, "Alemar Accesorios", que no es de este proyecto) |
+| Cuenta de WhatsApp Business (WABA) | ✅ **`403489972840929`**, tipo "Aplicación de WhatsApp Business" — se dio de alta desde la app del celular, que es el camino de Coexistence |
+| Número conectado | ✅ **+54 9 343 451-2995**, estado *Conectado*. **Es el número real de la empresa**, con perfil completo: logo, "Alojamiento por día", De los Gladiolos 1340, Crespo, Entre Ríos |
+| Identificador del número | **`407269815803738`** |
+| Verificación del negocio | ✅ **No hace falta.** El Centro de seguridad dice textualmente: *"Tu organización no tiene que completar la verificación"* |
+| App de desarrollador | ❌ **No existe ninguna.** La sección Aplicaciones del portafolio está vacía y la cuenta ni siquiera está registrada como desarrollador |
+| Usuario del sistema | ❌ No se puede crear: Meta lo bloquea con *"una aplicación debe formar parte de este porfolio"* |
+
+### Consecuencias
+
+1. **No hay número de prueba de Meta.** Viene con la app de desarrollador, que nunca se creó. Lo que está conectado es el número real.
+2. **El `WHATSAPP_PHONE_NUMBER_ID` cargado en Vercel probablemente sea `407269815803738`**, o sea el del número real. No se puede confirmar porque esa variable es `sensitive`.
+3. **La verificación del negocio sale de la lista de pendientes.** Se había marcado como el trámite urgente por su demora; Meta no la está exigiendo. Puede volver a pedirla más adelante para límites de envío más altos.
+4. Para el token permanente hay que **crear la app de desarrollador**, y eso arranca por registrar la cuenta de Facebook como desarrollador.
+
+---
+
+## 🚧 Bloqueo activo: límite antispam de la cuenta
+
+**El registro de desarrollador quedó a mitad de camino**, en el paso "Verify account", esperando un código de 6 dígitos por SMS.
+
+Al intentar reenviarlo, Meta devolvió en rojo:
+
+> *"Reduce la frecuencia o tómate un descanso para evitar restricciones en tu cuenta. Limitamos la frecuencia con la que puedes publicar, comentar o hacer otras cosas durante un cierto período de tiempo a fin de proteger a la comunidad frente al spam."*
+
+**Esto es lo que explica que nunca llegara ningún código** — ni el de WhatsApp ni el del SMS. No es el formato del número: **la cuenta está limitada y Meta directamente no manda el mensaje**, sin avisar.
+
+### Reglas mientras dure
+
+- **No reintentar nada.** Cada intento extiende el bloqueo. Aplica desde cualquier dispositivo, no solo desde acá.
+- Dura entre unas horas y 24 hs.
+- El formulario de Meta quiere el número **nacional pelado**: `3435074866` con país Argentina (+54). Rechaza el `9` adelante. (El `9` sí es necesario en `WHATSAPP_ADMIN_PHONE`, que es otra cosa: ahí va `5493434512995` para el número de la empresa.)
+
+### Cuando se levante, en este orden
+
+1. Terminar el registro de desarrollador (código por SMS).
+2. Crear la app, agregarle el producto WhatsApp y vincularla al portafolio.
+3. Crear el usuario del sistema, asignarle la app **y** la WABA.
+4. Generar el token permanente.
+
+---
+
 ## Parte A — Lo que hay que hacer en Meta
 
 ### A.1 Crear el usuario del sistema
@@ -229,8 +277,13 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 ## Resumen
 
-### 🔴 Arrancar ya, en paralelo (tiene demora externa)
-- [ ] **Verificación del negocio en Meta**
+### ✅ Ya resuelto
+- [x] ~~Verificación del negocio~~ — **Meta no la exige** para este portafolio
+- [x] Datos bancarios editables desde `/admin/configuracion` (falta que el dueño cargue el valor)
+
+### 🚧 Bloqueado hasta que se levante el límite antispam
+- [ ] Terminar el registro de desarrollador (código por SMS)
+- [ ] Crear la app + producto WhatsApp + vincularla al portafolio
 
 ### Etapa 1 — Completar el sistema con el número de prueba
 
