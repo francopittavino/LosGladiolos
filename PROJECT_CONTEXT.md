@@ -153,7 +153,7 @@ Tanto `googleCalendar.ts` como `whatsapp.ts` están escritos como **best effort*
 | `BLOB_READ_WRITE_TOKEN` | ✅ | ✅ |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ `reservas@los-gladiolos.iam.gserviceaccount.com` | ✅ |
 | `GOOGLE_PRIVATE_KEY` | ✅ | ✅ clave nueva generada el 7/8 |
-| `GOOGLE_CALENDAR_ID` | ✅ | ⚠️ apunta al calendario **"Los Gladiolos PRUEBAS"** |
+| `GOOGLE_CALENDAR_ID` | ✅ | ✅ apunta a **"Los Gladiolos PRUEBAS"**, a propósito hasta la migración final |
 | `ADMIN_PANEL_PASSWORD` | ✅ | ⚠️ valor local de desarrollo |
 | `CRON_SECRET` | ✅ | ⚠️ valor local de desarrollo |
 | `NEXT_PUBLIC_BASE_URL` | ✅ | ✅ `http://localhost:3000` |
@@ -211,6 +211,8 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 2026-08-07 | Poner el proyecto bajo git y publicarlo en GitHub | Es lo que evita que esto vuelva a pasar |
 | 2026-08-07 | Restaurar desde el **fuente que Vercel guarda del deployment**, no desde la reconstrucción | Es el original exacto; trajo el `package.json` real, la migración inicial y las fotos del complejo |
 | 2026-08-07 | Diseño **bordó/crema con Tailwind** | Es el que está integrado con el backend; se descartó el verde botánico del borrador |
+| 2026-08-07 | **Completar el sistema con recursos de prueba** (calendario "PRUEBAS" y número de prueba de Meta) y migrar a los reales al final | No se toca el WhatsApp con el que el dueño atiende clientes hasta que todo esté verificado. La migración es solo cambiar dos variables de entorno |
+| 2026-08-07 | WhatsApp con **Coexistence** | El dueño sigue atendiendo a mano desde el mismo número |
 
 ---
 
@@ -220,6 +222,6 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 - [ ] **Token de WhatsApp** y número del admin.
 - [ ] Plantillas de mensaje aprobadas por Meta, para poder escribirle a huéspedes fuera de la ventana de 24 hs.
 - [ ] Qué hacer con estadías de **más de 7 noches** — la matriz de tarifas llega hasta 7.
-- [ ] **Apuntar `GOOGLE_CALENDAR_ID` al calendario definitivo.** El que está configurado se llama "Los Gladiolos PRUEBAS"; hay que confirmar si producción usa ese mismo o el real, y compartir el calendario definitivo con la cuenta de servicio.
+- [ ] **Migración a recursos reales** (calendario del alojamiento y número de la empresa). Es el último paso planificado, cuando el sistema esté completo — ver `WHATSAPP.md`.
 - [x] ~~Texto de las reglas~~ — cargado en `ConfiguracionGeneral` (1201 caracteres), editable desde el panel.
 - [x] ~~Fotos del complejo~~ — en `public/images/`: hero, logo y 3 de galería.

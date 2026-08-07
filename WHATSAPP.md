@@ -6,17 +6,58 @@
 
 ---
 
-## Antes de empezar: la decisión que hay que tomar primero
+## Estrategia: terminar todo con recursos de prueba, migrar al final
 
-**Coexistence.** El número que se conecte a la Cloud API deja de funcionar en la app de WhatsApp Business del celular, salvo que se active el modo Coexistence. Como el dueño usa el número para atender clientes a mano, esto importa:
+**Decidido el 2026-08-07.** El sistema se completa y se valida entero usando el **número de prueba de Meta** y el calendario **"Los Gladiolos PRUEBAS"**. Recién cuando todo funcione se migra a los recursos reales de la empresa.
 
-| Opción | Qué pasa |
-|---|---|
-| **Coexistence** (lo previsto) | El dueño sigue usando WhatsApp Business en el celular **y** el sistema manda automáticos desde el mismo número. Es lo que se había planeado. |
-| **Número nuevo dedicado** | El sistema usa un número aparte. Más simple de configurar, pero el cliente recibe los avisos desde un número distinto al que conoce. |
-| **Migración completa** | El número se muda a la Cloud API y el celular deja de usarlo. **No recomendado** para este caso. |
+> Por eso el `GOOGLE_CALENDAR_ID` apunta hoy a un calendario de prueba: **es a propósito**, no es un pendiente.
 
-> Definir esto antes de tocar nada en Meta. El resto de los pasos es igual, pero el número que se registra cambia.
+### Qué se hace ahora, con recursos de prueba
+
+Todo esto **sobrevive a la migración** y no hay que rehacerlo:
+
+- **El token permanente.** Está atado a la app y a la cuenta de WhatsApp Business (WABA), **no al número**. Además evita el vencimiento cada 24 hs del token temporal, que hace insoportable desarrollar.
+- **Las plantillas.** Se aprueban a nivel **WABA, no a nivel número**. Las que se creen ahora siguen valiendo después.
+- **Todo el código**: datos bancarios en `ConfiguracionGeneral` y el cambio de `enviarTexto()` a `enviarPlantilla()`.
+
+### Qué se hace el día de la migración
+
+Cambiar **dos variables de entorno**, redeployar, y listo:
+
+| Variable | De | A |
+|---|---|---|
+| `WHATSAPP_PHONE_NUMBER_ID` | número de prueba de Meta | número real de la empresa |
+| `GOOGLE_CALENDAR_ID` | "Los Gladiolos PRUEBAS" | calendario real del alojamiento |
+
+Antes de cambiar el calendario hay que **compartir el calendario real con `reservas@los-gladiolos.iam.gserviceaccount.com`** con permiso de "Hacer cambios en los eventos".
+
+---
+
+## 🔴 Empezar YA, aunque el resto vaya con recursos de prueba
+
+### La verificación del negocio en Meta
+
+Para conectar un **número propio** a la Cloud API, Meta exige que el negocio esté verificado. Piden documentación de la empresa y **el trámite tarda días**.
+
+Con el número de prueba no hace falta, así que es fácil que esto quede escondido hasta el día de la migración — y ahí frena todo una semana.
+
+**Es lo único de la lista que no depende de nosotros y no se puede apurar. Conviene arrancarlo ahora, en paralelo.**
+
+business.facebook.com → Configuración del negocio → **Centro de seguridad** → Verificación del negocio.
+
+### Coexistence
+
+El número que se conecte a la Cloud API deja de funcionar en la app de WhatsApp Business del celular, salvo que se active Coexistence. **Decidido: se usa Coexistence**, para que el dueño siga atendiendo a mano desde el mismo número.
+
+Esto aplica solo a la migración final: el número de prueba de Meta no lo necesita. Al momento de hacerlo, verificar los requisitos vigentes — el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y el alta se hace por el flujo de Embedded Signup con coexistencia habilitada.
+
+---
+
+## Limitaciones del número de prueba
+
+- Solo se le puede escribir a **hasta 5 destinatarios pre-registrados** (paso A.5). Alcanza para probar el circuito completo con el celular del dueño, pero **no se puede probar con un huésped real** hasta migrar.
+- El número lo provee Meta, no es de la empresa: los mensajes llegan desde un número desconocido para el destinatario.
+- Un `(#131030)` al escribirle a alguien no registrado **no es un bug**: es esta limitación.
 
 ---
 
@@ -149,25 +190,39 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 ---
 
-## Resumen de lo que hace falta
+## Resumen
+
+### 🔴 Arrancar ya, en paralelo (tiene demora externa)
+- [ ] **Verificación del negocio en Meta**
+
+### Etapa 1 — Completar el sistema con el número de prueba
 
 **Del dueño / de negocio:**
-- [ ] Decidir Coexistence vs. número nuevo
 - [ ] Celular del admin con código de país
-- [ ] **Datos bancarios** para la seña
-- [ ] Aceptar el mensaje de verificación como número de prueba
+- [ ] **Datos bancarios** para la seña ← bloquea la plantilla `reserva_aprobada`
+- [ ] Aceptar el mensaje de verificación como destinatario de prueba
 
-**De configuración en Meta:**
+**En Meta:**
 - [ ] Usuario del sistema creado
 - [ ] App **y** cuenta de WhatsApp asignadas al usuario del sistema
-- [ ] Token permanente generado y guardado
-- [ ] Identificador del número anotado
+- [ ] Token permanente generado y guardado en el gestor de contraseñas
+- [ ] Identificador del número de prueba anotado
 - [ ] Las 6 plantillas creadas y aprobadas
 
 **De código:**
 - [ ] Mover `DATOS_BANCARIOS` a `ConfiguracionGeneral` y agregarlo al panel
 - [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los seis avisos
-- [ ] Probar el flujo completo de punta a punta
+- [ ] Flujo completo probado de punta a punta
 
 **En Vercel:**
 - [ ] Las tres variables cargadas + redeploy
+
+### Etapa 2 — Migración a los recursos reales
+
+- [ ] Verificación del negocio aprobada
+- [ ] Número real dado de alta con **Coexistence**
+- [ ] Calendario real compartido con `reservas@los-gladiolos.iam.gserviceaccount.com`
+- [ ] `WHATSAPP_PHONE_NUMBER_ID` → número real
+- [ ] `GOOGLE_CALENDAR_ID` → calendario real
+- [ ] `NEXT_PUBLIC_BASE_URL` → dominio definitivo, si se usa uno propio
+- [ ] Redeploy y prueba con una reserva real
