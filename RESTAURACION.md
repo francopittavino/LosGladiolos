@@ -136,13 +136,7 @@ Dos cosas a tener en cuenta:
 
 ### Fase 5 — WhatsApp (lo último)
 
-| Tarea | Detalle |
-|---|---|
-| `WHATSAPP_ACCESS_TOKEN` | Token **permanente** vía System User en Meta Business Settings. El de la pantalla de API Setup dura 24 hs |
-| `WHATSAPP_ADMIN_PHONE` | Celular del dueño, solo dígitos con código de país |
-| Número de prueba | Agregar el celular como destinatario de prueba en la app de Meta |
-| Plantillas aprobadas | Necesarias para escribirle a huéspedes fuera de la ventana de 24 hs de Meta |
-| Datos bancarios | Hoy el mensaje dice "(Datos bancarios pendientes de cargar)". Conviene moverlo a `ConfiguracionGeneral` en vez de dejarlo hardcodeado en `lib/notificaciones.ts` |
+**Ver `WHATSAPP.md`**, que tiene el paso a paso completo: token permanente vía usuario del sistema, asignación de activos, plantillas de Meta y pruebas.
 
 ### Fase 6 — Cerrar
 

@@ -4,7 +4,7 @@
 > Cualquier modelo de IA que trabaje en este proyecto debe leer este archivo primero.
 >
 > **Última actualización:** 2026-08-07 — auditoría completa + recuperación del código perdido.
-> **Ver también:** `RESTAURACION.md` (plan de trabajo vigente) y `CREDENTIALS.md` (estado de cuentas).
+> **Ver también:** `WHATSAPP.md` (lo único que falta del sistema), `CREDENTIALS.md` (estado de cuentas) y `RESTAURACION.md` (registro de la restauración del 7/8).
 
 ---
 
