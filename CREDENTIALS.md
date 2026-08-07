@@ -8,17 +8,26 @@
 
 ---
 
-## 🔑 Lo más importante
+## 🔑 Lo más importante: las variables `sensitive` NO se pueden recuperar
 
-**Las credenciales no se perdieron.** Están cargadas en el proyecto de Vercel. Para tener un entorno local funcionando:
+En Vercel, casi todas las variables de este proyecto están cargadas con el tipo **`sensitive`**. Ese tipo es de **escritura solamente**: Vercel las inyecta en producción, pero **no las devuelve nunca más** — ni por la API, ni con `vercel env pull`, ni mostrándolas en el panel.
 
-```bash
-npx vercel login
-npx vercel link          # vincular la carpeta al proyecto existente
-npx vercel env pull .env.local
-```
+| Variable | Entorno | Tipo | ¿Se puede recuperar? |
+|---|---|---|---|
+| `DATABASE_URL` | production | sensitive | ❌ (hay copia local en `.env.local`) |
+| `ADMIN_PANEL_PASSWORD` | production | sensitive | ❌ |
+| `CRON_SECRET` | production | sensitive | ❌ |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | production | sensitive | ❌ (pero se conoce el valor, ver abajo) |
+| `GOOGLE_PRIVATE_KEY` | production | sensitive | ❌ |
+| `GOOGLE_CALENDAR_ID` | production | sensitive | ❌ |
+| `NEXT_PUBLIC_BASE_URL` | production | sensitive | ❌ (valor obvio) |
+| `BLOB_READ_WRITE_TOKEN` | dev/preview/prod | encrypted | ✅ recuperada |
+| `BLOB_STORE_ID` | dev/preview/prod | plain | ✅ recuperada |
+| `BLOB_WEBHOOK_PUBLIC_KEY` | dev/preview/prod | plain | ✅ recuperada |
 
-Eso baja de una todas las variables ya configuradas. **No hay que volver a generar nada** salvo lo que figura como pendiente abajo.
+**Consecuencia práctica:** producción sigue andando porque Vercel ya tiene los valores guardados, pero **para trabajar en local hay que volver a generar** las de Google. No es una limitación del token que se usó: es cómo funciona el tipo `sensitive`.
+
+> ⚠️ **Regla para el futuro:** cada vez que se cargue una variable `sensitive` en Vercel, guardar además una copia en un gestor de contraseñas. Vercel deja de ser un lugar del que se pueda recuperar.
 
 ---
 
@@ -57,15 +66,25 @@ Guarda las fotos de DNI con acceso **privado**. Ya hay fotos subidas de la sesi�
 
 - `BLOB_READ_WRITE_TOKEN` → está en Vercel. Si hiciera falta regenerarlo: panel de Vercel → Storage → el store de Blob → `.env.local` tab.
 
-### 4. Google Cloud (Calendar API) — ✅ Listo
+### 4. Google Cloud (Calendar API) — ✅ En producción, 🔄 falta en local
 
-Cuenta de servicio creada: **`reservas@los-gladiolos.iam.gserviceaccount.com`**
+Cuenta de servicio creada y funcionando: **`reservas@los-gladiolos.iam.gserviceaccount.com`**
 
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` → el email de arriba.
 - `GOOGLE_PRIVATE_KEY` → del JSON descargado. Los saltos de línea viajan escapados como `\n` literales; `lib/googleCalendar.ts` los desescapa solo.
 - `GOOGLE_CALENDAR_ID` → el calendario del dueño, **compartido con la cuenta de servicio** con permiso de "Hacer cambios en los eventos".
 
-> Si el JSON de la cuenta de servicio se perdió, no se puede volver a descargar: hay que generar una **clave nueva** desde Google Cloud → IAM → Cuentas de servicio → Claves. La cuenta de servicio en sí sigue existiendo.
+**Para tenerlas en local hay que regenerar la clave** (las de Vercel son `sensitive` y no se pueden leer):
+
+1. Google Cloud Console → **IAM y administración → Cuentas de servicio**
+2. Entrar a `reservas@los-gladiolos.iam.gserviceaccount.com` → pestaña **Claves**
+3. **Agregar clave → Crear clave nueva → JSON** → se descarga un archivo
+4. Del JSON salen `client_email` y `private_key`
+5. El `GOOGLE_CALENDAR_ID` se saca de Google Calendar → configuración del calendario → "Integrar calendario" → **ID del calendario**
+
+> La cuenta de servicio **no se toca**: sigue existiendo y sigue teniendo permiso sobre el calendario. Solo se le agrega una clave más. Las claves viejas siguen funcionando (producción no se ve afectada), y conviene borrar las que no se usen.
+>
+> Guardar el JSON en un gestor de contraseñas, y **borrarlo del disco** una vez cargado en `.env.local`.
 
 ### 5. Meta WhatsApp Cloud API — 🔄 Lo único que falta
 
