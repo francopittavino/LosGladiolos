@@ -1,7 +1,16 @@
 # Los Gladiolos — Plan de Restauración
 
-> **Estado:** plan activo. Iniciado el **2026-08-07**, actualizado el mismo día tras verificar producción.
-> Cuando termine, el proyecto vuelve a guiarse por `PROJECT_CONTEXT.md`.
+> **Estado:** ✅ **Restauración completa** (2026-08-07). Solo queda WhatsApp, que ya era el pendiente conocido de antes de perder la carpeta.
+> El proyecto vuelve a guiarse por `PROJECT_CONTEXT.md`.
+
+## ✅ Resultado
+
+El sistema está restaurado en `C:\LosGladiolos\los-gladiolos\`, versionado en GitHub y **verificado funcionando en local contra la base real de Neon**:
+
+- `npx tsc --noEmit` y `npx next build` limpios — **16 rutas**, panel admin incluido
+- **21 de 21 pruebas de punta a punta en verde**: alta de reserva con asignación automática de departamento, precio desde la matriz de tarifas, rechazo por lista negra, validación de reglas y de fechas, cron protegido por `CRON_SECRET`, y panel admin exigiendo sesión
+
+La base se usó de verdad en las pruebas y quedó limpia después (0 reservas, 0 lista negra; se conservan los 4 departamentos, las 35 tarifas y la configuración).
 
 ---
 
@@ -158,29 +167,32 @@ Dos cosas a tener en cuenta:
 - [x] `git init` en `C:\LosGladiolos\` (rama `main`)
 - [x] `.gitignore` verificado
 - [x] Primer commit con el material recuperado — 90 archivos
-- [ ] **Publicado en GitHub como repositorio privado**
+- [x] Publicado en **https://github.com/francopittavino/LosGladiolos**
+- [ ] Confirmar que el repositorio esté en **privado**
 
 **Fase 1 — Original de Vercel**
-- [ ] Source del deployment de producción descargado
-- [ ] Verificado que el deploy sea posterior a la última edición del 6/8
-- [ ] Token de Vercel revocado
+- [x] Source del deployment de producción descargado (75 archivos)
+- [x] Detectado que el deploy (23:09) es **anterior** a la integración de WhatsApp (23:47), y traídos esos 2 archivos del historial
+- [ ] **Revocar el token de Vercel**
 
 **Fase 2 — Proyecto**
-- [ ] Versión buena en la carpeta de trabajo
-- [ ] Borrador archivado
-- [ ] `public/` y configs traídos
+- [x] Versión buena en `los-gladiolos/`
+- [x] Borrador descartado (queda en git, commit `0915862`)
+- [x] `public/` con las fotos reales y configs, todo del original
 
 **Fase 3 — Dependencias y credenciales**
-- [ ] `npm install` + `npx prisma generate`
-- [ ] `vercel env pull .env.local`
+- [x] `npm install` + `npx prisma generate` (Prisma 7.9.1)
+- [~] `.env.local` armado con base de datos y Blob. **Faltan las de Google Calendar**: el token de proyecto no puede desencriptarlas
 
 **Fase 4 — Revalidación**
-- [ ] `tsc --noEmit` y `next build` limpios
-- [ ] `migrate status` sin drift
-- [ ] Reserva general end-to-end con fotos
-- [ ] Confirmación desde el panel + evento en Calendar
-- [ ] Reserva de viajante frecuente
-- [ ] Bloqueo por lista negra
+- [x] `tsc --noEmit` y `next build` limpios (16 rutas)
+- [x] Alta de reserva end-to-end con asignación automática de departamento
+- [x] Precio tomado de la matriz de tarifas
+- [x] Bloqueo por lista negra (403, y no persiste la reserva)
+- [x] Validación de reglas aceptadas y de fechas pasadas
+- [x] Cron: 401 sin credencial, 200 con `CRON_SECRET`
+- [x] Panel admin exige sesión; `/admin/login` responde
+- [ ] Confirmación desde el panel + evento en Calendar — **requiere las credenciales de Google**
 
 **Fase 5 — WhatsApp**
 - [ ] Token permanente + número del admin
@@ -204,3 +216,22 @@ Dos cosas a tener en cuenta:
 | 2026-08-07 | Verificado que producción sigue viva y que el cron funciona |
 | 2026-08-07 | Elegido el diseño bordó/Tailwind; descartado el verde botánico |
 | 2026-08-07 | Borrados los datos de prueba de Neon (1 reserva + 2 huéspedes, 1 viajante, 1 lista negra) |
+| 2026-08-07 | Repositorio publicado en GitHub |
+| 2026-08-07 | Bajado el fuente original del deployment de producción (75 archivos) vía la API de Vercel |
+| 2026-08-07 | Restaurado el proyecto: fuente de Vercel + `whatsapp.ts` y `notificaciones.ts` del historial |
+| 2026-08-07 | Verificado en local: build limpio y 21/21 pruebas de punta a punta contra Neon |
+
+---
+
+## 8. Lo único que queda
+
+1. **Revocar el token de Vercel** usado para la restauración.
+2. **Confirmar que el repositorio de GitHub esté en privado.**
+3. **Credenciales de Google Calendar en local.** El token de proyecto no puede desencriptar las variables de producción. Se traen con:
+   ```bash
+   npx vercel login
+   npx vercel env pull .env.local
+   ```
+   Sin ellas, `googleCalendar.ts` devuelve `null` y la reserva se guarda igual (comportamiento best effort), pero no se puede probar la creación del evento en el calendario.
+   > Ojo: `vercel env pull` pisa el `.env.local` actual, que hoy tiene una contraseña de admin local (`ADMIN_PANEL_PASSWORD`) y un `CRON_SECRET` generados para poder probar. Después de pisarlo, revisá que esas dos tengan valor.
+4. **WhatsApp** — ver Fase 5.

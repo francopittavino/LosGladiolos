@@ -8,18 +8,22 @@
 
 ---
 
-## 0. Lo primero que hay que entender
+## 0. Estado del proyecto
 
-Existen **dos versiones del código** en el disco, y la que está en el directorio de trabajo habitual **no es la buena**:
+El proyecto está **restaurado y verificado**. El código vive en `C:\LosGladiolos\los-gladiolos\`, versionado en **https://github.com/francopittavino/LosGladiolos**.
 
-| Ruta | Qué es | Estado |
-|---|---|---|
-| `C:\LosGladiolos\los-gladiolos\` | Primer borrador (6/8 a la tarde). Landing + formulario, sin backend. | ⚠️ Incompleto, es un callejón sin salida |
-| `C:\LosGladiolos\_recuperado\los-gladiolos\` | **Sistema completo** (6/8 a la noche). Backend, panel admin, Calendar, WhatsApp, cron, migraciones. | ✅ Esta es la versión buena |
+El 6/8 se perdió la carpeta de trabajo (`OneDrive\Escritorio\LosGladiolos System\`), pero **producción nunca se cayó**. El 7/8 se restauró bajando el fuente del deployment de producción que Vercel conserva, más dos archivos de la integración de WhatsApp que se escribieron después del último deploy y se recuperaron del historial de la sesión.
 
-La versión buena se había perdido: vivía en `C:\Users\franc\OneDrive\Escritorio\LosGladiolos System\`, carpeta que ya no existe en disco. Se **reconstruyó el 7/8 a partir del historial de la sesión de Claude Code** que la escribió (`C:\Users\franc\.claude\projects\C--Users-franc-OneDrive-Escritorio-LosGladiolos-System\`), replayando en orden cronológico todas las operaciones de escritura y edición. 62 archivos recuperados.
+Verificado el 7/8: `tsc --noEmit` y `next build` limpios (16 rutas) y 21/21 pruebas de punta a punta en verde contra la base real.
 
-**La base de datos de Neon confirma que la versión recuperada es la real:** el esquema en producción tiene la tabla `ConfiguracionGeneral` y las columnas `ViajanteFrecuente.numeroDni / dominioVehiculo / fotoDni`, que **solo existen en la versión recuperada**. El borrador tiene un esquema viejo que, si se aplicara, borraría esas columnas.
+Carpetas auxiliares en el repositorio, que **no son el proyecto**:
+
+| Ruta | Qué es |
+|---|---|
+| `_original_vercel/` | Copia intacta de lo descargado de Vercel |
+| `_recuperado/` | La reconstrucción desde el historial de sesiones. Solo de ahí salieron `lib/whatsapp.ts` y `lib/notificaciones.ts` |
+
+El borrador incompleto del 6/8 a la tarde se descartó; queda en el historial de git, commit `0915862`.
 
 ---
 
@@ -89,7 +93,7 @@ La **base de datos es la fuente de verdad** de la disponibilidad, no Google Cale
 
 ## 4. Esquema de Base de Datos
 
-Fuente de verdad: `_recuperado/los-gladiolos/prisma/schema.prisma`. **Coincide exactamente con lo que hay aplicado en Neon** (verificado contra `information_schema` el 7/8).
+Fuente de verdad: `los-gladiolos/prisma/schema.prisma`, con 4 migraciones versionadas en `prisma/migrations/`. **Coincide exactamente con lo que hay aplicado en Neon** (verificado contra `information_schema` el 7/8).
 
 Modelos: `Departamento`, `Reserva`, `PersonaHuesped`, `ViajanteFrecuente`, `TarifaMatriz`, `ListaNegra`, `ConfiguracionGeneral`.
 Enums: `EstadoReserva` (PENDIENTE, CONFIRMADA, SENIA_PAGADA, RECHAZADA, CANCELADA_SIN_SENIA), `Planta` (BAJA, ALTA).
@@ -100,7 +104,8 @@ Puntos a tener presentes:
 - **`colorCalendario`** guarda un **`colorId` de Google Calendar** (string numérico, ej. `"3"`), **no** un color hexadecimal.
 - `PersonaHuesped` tiene `onDelete: Cascade` sobre la reserva.
 - `ViajanteFrecuente.numeroDni` es `@unique` — es la clave con la que el huésped se identifica en la web.
-- Hay 3 migraciones versionadas en `prisma/migrations/`.
+- Hay 4 migraciones versionadas en `prisma/migrations/`, desde `20260806190701_init`.
+- **Prisma 7 exige un driver adapter.** El cliente se instancia con `PrismaPg` (`@prisma/adapter-pg` + `pg`); no funciona sin él.
 
 ---
 
@@ -112,18 +117,18 @@ Verificado el **2026-08-07**. Esquema aplicado y con datos reales:
 |---|---|---|
 | `Departamento` | 4 | ids literales `"Departamento 1"`…`"Departamento 4"`, capacidad 5, 2 BAJA + 2 ALTA |
 | `TarifaMatriz` | 35 | matriz completa 1–5 personas × 1–7 noches. Ej: 1 persona/1 noche = $15.000 |
-| `Reserva` | 1 | prueba "Maria Lopez", CONFIRMADA, seña 30% ($11.400 de $38.000) |
-| `PersonaHuesped` | 2 | con fotos de DNI reales subidas a Vercel Blob |
-| `ViajanteFrecuente` | 1 | registro de prueba |
-| `ListaNegra` | 1 | registro de prueba |
-| `ConfiguracionGeneral` | — | fila singleton de configuración |
-| `_prisma_migrations` | — | historial de migraciones aplicadas |
+| `Reserva` | 0 | — |
+| `PersonaHuesped` | 0 | — |
+| `ViajanteFrecuente` | 0 | — |
+| `ListaNegra` | 0 | — |
+| `ConfiguracionGeneral` | 1 | singleton: seña **30%**, plazo **24 hs**, texto de reglas ya cargado (1201 caracteres) |
+| `_prisma_migrations` | — | historial de las 4 migraciones aplicadas |
 
-Son **datos de prueba de la sesión del 6/8**, no datos productivos. Conviene limpiarlos antes de salir a producción.
+Los datos de prueba del 6/8 se borraron el 7/8. **Reservas, huéspedes, viajantes y lista negra están en cero**; para probar el panel admin hay que cargar algo primero.
 
 ---
 
-## 6. Endpoints y Rutas (versión recuperada)
+## 6. Endpoints y Rutas
 
 **API pública**
 
@@ -149,21 +154,23 @@ Tanto `googleCalendar.ts` como `whatsapp.ts` están escritos como **best effort*
 
 **Las credenciales están guardadas en Vercel.** No hay que volver a generarlas: se recuperan con `vercel env pull .env.local`.
 
-| Variable | Estado |
-|---|---|
-| `DATABASE_URL` | ✅ En Vercel y en el `.env.local` actual |
-| `BLOB_READ_WRITE_TOKEN` | ✅ En Vercel (falta en el `.env.local` actual) |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ En Vercel — `reservas@los-gladiolos.iam.gserviceaccount.com` |
-| `GOOGLE_PRIVATE_KEY` | ✅ En Vercel |
-| `GOOGLE_CALENDAR_ID` | ✅ En Vercel |
-| `ADMIN_PANEL_PASSWORD` | ✅ En Vercel |
-| `NEXT_PUBLIC_BASE_URL` | ✅ En Vercel |
-| `WHATSAPP_PHONE_NUMBER_ID` | ✅ En Vercel |
-| `WHATSAPP_ACCESS_TOKEN` | ⬜ **Pendiente** — es lo único que falta |
-| `WHATSAPP_ADMIN_PHONE` | ⬜ **Pendiente** |
-| `CRON_SECRET` | ⬜ Pendiente (lo usa `/api/cron`) |
+| Variable | En Vercel | En `.env.local` |
+|---|---|---|
+| `DATABASE_URL` | ✅ | ✅ |
+| `BLOB_READ_WRITE_TOKEN` | ✅ | ✅ |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ `reservas@los-gladiolos.iam.gserviceaccount.com` | ⬜ |
+| `GOOGLE_PRIVATE_KEY` | ✅ | ⬜ |
+| `GOOGLE_CALENDAR_ID` | ✅ | ⬜ |
+| `ADMIN_PANEL_PASSWORD` | ✅ | ⚠️ valor local de desarrollo |
+| `CRON_SECRET` | ✅ | ⚠️ valor local de desarrollo |
+| `NEXT_PUBLIC_BASE_URL` | ✅ | ✅ `http://localhost:3000` |
+| `WHATSAPP_PHONE_NUMBER_ID` | ✅ | ⬜ |
+| `WHATSAPP_ACCESS_TOKEN` | ⬜ **Pendiente** | ⬜ |
+| `WHATSAPP_ADMIN_PHONE` | ⬜ **Pendiente** | ⬜ |
 
-En la versión recuperada, el CLI de Prisma sí lee `.env.local` gracias a `prisma.config.ts`, que hace `config({ path: ".env.local" })` con `dotenv`.
+Las de Google faltan en local porque un token de proyecto de Vercel no puede desencriptar las variables de producción. Se traen con `npx vercel login && npx vercel env pull .env.local` — pero eso **pisa** el archivo, así que después hay que revisar que `ADMIN_PANEL_PASSWORD` y `CRON_SECRET` tengan valor para poder trabajar en local.
+
+El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config({ path: ".env.local" })` con `dotenv`.
 
 ---
 
@@ -187,10 +194,10 @@ En la versión recuperada, el CLI de Prisma sí lee `.env.local` gracias a `pris
 | 5 | WhatsApp Cloud API | ✅ Código completo — ⬜ falta el access token |
 | 6 | Panel admin | ✅ Completo |
 | 7 | Viajantes frecuentes | ✅ Completo |
-| 8 | Cron de vencimiento de seña | ✅ Completo — ⬜ falta configurar `CRON_SECRET` y el disparador |
-| 9 | Deploy final en Vercel | 🔄 Pendiente de reconectar el repo |
+| 8 | Cron de vencimiento de seña | ✅ Completo y **andando**: cron-job.org le pega cada hora en producción |
+| 9 | Deploy final en Vercel | ✅ Vivo en https://los-gladiolos.vercel.app — 🔄 falta que deploye desde GitHub en vez del CLI |
 
-> ⚠️ Estos ✅ significan **"el código existe y fue escrito y probado en la sesión del 6/8"**. Después de la recuperación del 7/8, el proyecto **todavía no se volvió a instalar ni compilar**. Hay que revalidarlo — ver `RESTAURACION.md`.
+> Estos ✅ están **verificados el 7/8**: build limpio y 21/21 pruebas de punta a punta contra la base real. La única parte sin probar en local es la creación del evento en Google Calendar, porque faltan esas credenciales en el `.env.local` (ver sección 7).
 
 ---
 
@@ -208,8 +215,9 @@ En la versión recuperada, el CLI de Prisma sí lee `.env.local` gracias a `pris
 | 2026-08-06 | Eventos de día completo en Calendar, con `end.date` exclusivo | Refleja exactamente las noches ocupadas y evita que dos reservas consecutivas se vean superpuestas |
 | 2026-08-06 | Swap de planta baja → alta solo para reservas `PENDIENTE` | Al huésped todavía no se le comunicó su departamento, así que moverlo no rompe ninguna promesa |
 | 2026-08-06 | Cancelación de señas vencidas también "al vuelo" | El plan Hobby de Vercel solo permite un cron por día |
-| 2026-08-07 | Recuperar el código desde el historial de sesiones en vez de reescribirlo | El código recuperado es más completo y es el que coincide con la DB |
-| 2026-08-07 | Poner el proyecto bajo git | Es lo que evita que esto vuelva a pasar |
+| 2026-08-07 | Poner el proyecto bajo git y publicarlo en GitHub | Es lo que evita que esto vuelva a pasar |
+| 2026-08-07 | Restaurar desde el **fuente que Vercel guarda del deployment**, no desde la reconstrucción | Es el original exacto; trajo el `package.json` real, la migración inicial y las fotos del complejo |
+| 2026-08-07 | Diseño **bordó/crema con Tailwind** | Es el que está integrado con el backend; se descartó el verde botánico del borrador |
 
 ---
 
@@ -217,7 +225,7 @@ En la versión recuperada, el CLI de Prisma sí lee `.env.local` gracias a `pris
 
 - [ ] **Datos bancarios** para la transferencia de la seña — hoy el mensaje de WhatsApp dice literalmente "(Datos bancarios pendientes de cargar)". Ver `lib/notificaciones.ts`, constante `DATOS_BANCARIOS`; conviene moverlo a `ConfiguracionGeneral`.
 - [ ] **Token de WhatsApp** y número del admin.
-- [ ] **Texto definitivo de las reglas** (se carga desde el panel, en Configuración).
-- [ ] **Fotos reales del complejo** para la galería.
-- [ ] Qué hacer con estadías de **más de 7 noches** — la matriz de tarifas llega hasta 7.
 - [ ] Plantillas de mensaje aprobadas por Meta, para poder escribirle a huéspedes fuera de la ventana de 24 hs.
+- [ ] Qué hacer con estadías de **más de 7 noches** — la matriz de tarifas llega hasta 7.
+- [x] ~~Texto de las reglas~~ — cargado en `ConfiguracionGeneral` (1201 caracteres), editable desde el panel.
+- [x] ~~Fotos del complejo~~ — en `public/images/`: hero, logo y 3 de galería.
