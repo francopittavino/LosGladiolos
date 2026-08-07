@@ -27,9 +27,11 @@ Se reconstruyeron **62 archivos** desde el historial de la sesión de Claude Cod
 
 ### Lo que NO se pudo recuperar del historial
 
+Nada de esto bloquea: el fuente de Vercel (Fase 1) trae el proyecto completo. Se deja anotado por si esa vía fallara.
+
 | Qué | Por qué | Cómo se resuelve |
 |---|---|---|
-| `package.json` con las dependencias reales | El replay de ediciones no aplicó | Bajarlo del source de Vercel (Fase 1) |
+| `package.json` con las dependencias reales | El replay de ediciones no aplicó | Viene en el source de Vercel |
 | Valores de las credenciales | Nunca pasaron por el historial | `vercel env pull` — están en Vercel |
 | `node_modules`, `.next` | No son código fuente | `npm install` |
 | Fotos del complejo | Nunca se subieron | Pendiente del dueño |
@@ -77,21 +79,21 @@ Se reconstruyeron **62 archivos** desde el historial de la sesión de Claude Cod
 
 ---
 
-### Fase 1 — Contrastar con el código original de Vercel 🔴 siguiente
+### Fase 1 — Bajar el código original de Vercel 🔴 siguiente
 
-Vercel conserva el código fuente de los deploys hechos por CLI. Ese es el original exacto; la reconstrucción es un replay y puede diferir en los 27 archivos que se editaron después de escribirse.
+Vercel conserva el código fuente de los deploys hechos por CLI. **Ese es el original, y es el que se usa como proyecto.** La reconstrucción de `_recuperado/` fue el plan B de cuando no sabíamos que existía esta copia; queda en el repositorio solo como respaldo.
 
-1. Entrar al proyecto en Vercel → **Deployments** → el deployment de producción → pestaña **Source**.
-2. Descargar el árbol de archivos.
-3. Dejarlo en `C:\LosGladiolos\_original_vercel\`.
-4. Comparar archivo por archivo contra `_recuperado/`. Donde difieran, **gana el de Vercel**.
-5. De ahí sale además el `package.json` real, con la lista de dependencias que el replay no pudo recuperar.
+1. Crear un token en **vercel.com/account/tokens** (expiración corta) y **revocarlo apenas termine la descarga**.
+2. Bajar el árbol del deployment de producción vía la API de Vercel a `C:\LosGladiolos\_original_vercel\`.
+3. **Único chequeo necesario:** comparar la fecha del deployment contra la última edición registrada en el historial (`lib/notificaciones.ts`, 6/8 23:48). Si el deploy es posterior, el fuente de Vercel está completo y no hace falta mirar nada más. Si fuera anterior, revisar solo los archivos tocados en esa ventana.
+
+> No hace falta comparar archivo por archivo contra `_recuperado/`. El de Vercel manda.
 
 ### Fase 2 — Reconstituir el proyecto
 
-1. Dejar la versión buena en `C:\LosGladiolos\los-gladiolos\` (así los paths y la config de Vercel no cambian).
+1. Instalar el fuente de Vercel como la versión de trabajo en `C:\LosGladiolos\los-gladiolos\` (así los paths y la config de Vercel no cambian).
 2. Archivar el borrador — sin borrarlo hasta que la Fase 4 esté verificada.
-3. Traer del borrador lo que la versión buena no tenga: `public/`, `eslint.config.mjs`, `postcss.config.mjs`.
+3. Traer del borrador lo que falte: `public/`, `eslint.config.mjs`, `postcss.config.mjs`.
 
 ### Fase 3 — Dependencias y credenciales
 
@@ -160,8 +162,8 @@ Dos cosas a tener en cuenta:
 
 **Fase 1 — Original de Vercel**
 - [ ] Source del deployment de producción descargado
-- [ ] Comparado contra `_recuperado/`
-- [ ] `package.json` real recuperado
+- [ ] Verificado que el deploy sea posterior a la última edición del 6/8
+- [ ] Token de Vercel revocado
 
 **Fase 2 — Proyecto**
 - [ ] Versión buena en la carpeta de trabajo
