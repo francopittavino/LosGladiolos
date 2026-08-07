@@ -12,6 +12,7 @@ export default async function ConfiguracionPage() {
           porcentajeSenia={Number(config?.porcentajeSenia ?? 30)}
           plazoVencimientoHoras={config?.plazoVencimientoHoras ?? 24}
           textoReglas={config?.textoReglas ?? ""}
+          datosBancarios={config?.datosBancarios ?? ""}
         />
       </div>
     </div>

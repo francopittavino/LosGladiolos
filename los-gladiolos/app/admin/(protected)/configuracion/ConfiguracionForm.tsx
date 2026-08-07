@@ -7,10 +7,12 @@ export function ConfiguracionForm({
   porcentajeSenia,
   plazoVencimientoHoras,
   textoReglas,
+  datosBancarios,
 }: {
   porcentajeSenia: number;
   plazoVencimientoHoras: number;
   textoReglas: string;
+  datosBancarios: string;
 }) {
   const [state, formAction, pending] = useActionState(guardarConfiguracion, undefined);
 
@@ -43,6 +45,20 @@ export function ConfiguracionForm({
           name="textoReglas"
           defaultValue={textoReglas}
           rows={6}
+          className="mt-1 block w-full rounded-lg border border-carbon/20 px-3 py-2"
+        />
+      </label>
+      <label className="block text-sm text-carbon">
+        Datos bancarios para la seña
+        <span className="mt-0.5 block text-xs text-carbon/60">
+          Se le mandan por WhatsApp al huésped cuando aprobás su reserva. Poné alias, CBU y
+          titular de la cuenta.
+        </span>
+        <textarea
+          name="datosBancarios"
+          defaultValue={datosBancarios}
+          rows={4}
+          placeholder={"Alias: los.gladiolos\nCBU: 0000000000000000000000\nTitular: ..."}
           className="mt-1 block w-full rounded-lg border border-carbon/20 px-3 py-2"
         />
       </label>

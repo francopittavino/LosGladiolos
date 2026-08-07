@@ -13,9 +13,20 @@ import { formatFecha } from "@/lib/format";
   aprobadas por Meta y usar enviarPlantilla() en lugar de enviarTexto().
 */
 
-// TODO: mover a ConfiguracionGeneral para que el dueño lo edite desde el panel.
-const DATOS_BANCARIOS =
-  "(Datos bancarios pendientes de cargar - avisale al administrador)";
+/**
+ * Los datos bancarios los edita el dueño desde /admin/configuracion. Mientras
+ * no los haya cargado, se manda un texto neutro en vez de dejar el mensaje a
+ * medias: el huesped tiene que entender que la seña existe pero que le van a
+ * pasar los datos aparte.
+ */
+async function datosBancarios(): Promise<string> {
+  const config = await prisma.configuracionGeneral.findUnique({
+    where: { id: "singleton" },
+    select: { datosBancarios: true },
+  });
+  const cargados = config?.datosBancarios?.trim();
+  return cargados || "Te vamos a pasar los datos para la transferencia por este mismo medio.";
+}
 
 function adminPhone(): string | null {
   return process.env.WHATSAPP_ADMIN_PHONE || null;
@@ -68,7 +79,7 @@ export async function notificarReservaConfirmada(reservaId: string) {
       `${reserva.cantPersonas} persona(s)\n` +
       `Total: $${Number(reserva.precioTotal).toLocaleString("es-AR")}\n\n` +
       `Para confirmarla, transferí la seña de ${monto} antes del ${vence}.\n\n` +
-      `${DATOS_BANCARIOS}\n\n` +
+      `${await datosBancarios()}\n\n` +
       `Si no recibimos la seña en ese plazo, la reserva se cancela automáticamente.`
   );
 }

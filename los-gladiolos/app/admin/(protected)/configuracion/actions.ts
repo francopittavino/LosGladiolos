@@ -17,6 +17,7 @@ export async function guardarConfiguracion(
   const porcentajeSenia = Number(formData.get("porcentajeSenia"));
   const plazoVencimientoHoras = Number(formData.get("plazoVencimientoHoras"));
   const textoReglas = String(formData.get("textoReglas") ?? "").trim();
+  const datosBancarios = String(formData.get("datosBancarios") ?? "").trim();
 
   if (!Number.isFinite(porcentajeSenia) || porcentajeSenia <= 0 || porcentajeSenia > 100) {
     return { error: "El porcentaje de seña debe ser entre 1 y 100.", ok: false };
@@ -27,8 +28,14 @@ export async function guardarConfiguracion(
 
   await prisma.configuracionGeneral.upsert({
     where: { id: "singleton" },
-    update: { porcentajeSenia, plazoVencimientoHoras, textoReglas },
-    create: { id: "singleton", porcentajeSenia, plazoVencimientoHoras, textoReglas },
+    update: { porcentajeSenia, plazoVencimientoHoras, textoReglas, datosBancarios },
+    create: {
+      id: "singleton",
+      porcentajeSenia,
+      plazoVencimientoHoras,
+      textoReglas,
+      datosBancarios,
+    },
   });
 
   revalidatePath("/admin/configuracion");
