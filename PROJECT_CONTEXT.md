@@ -8,6 +8,33 @@
 
 ---
 
+## ⏸️ Dónde retomar — última sesión: 2026-08-07
+
+**El sistema está completo y funcionando. Falta solamente WhatsApp.**
+
+### Lo próximo, apenas se pueda
+
+**Terminar el registro de desarrollador de Meta**, que quedó a mitad de camino en el paso "Verify account" esperando un código por SMS.
+
+🚧 **Está bloqueado por el límite antispam de la cuenta de Facebook.** Meta no manda ningún código mientras dure — es lo que explica que nunca llegaran ni el de WhatsApp ni el del SMS. **No reintentar**: cada intento lo extiende. Esperar a que se levante (horas, hasta 24 hs desde la tarde del 7/8).
+
+Cuando se libere, la secuencia completa está en `WHATSAPP.md`: registro → crear la app con el producto WhatsApp → vincularla al portafolio → usuario del sistema con la app **y** la WABA asignadas → token permanente.
+
+### Pendientes sueltos del 7/8
+
+- [ ] **Revocar el token de Vercel** creado para la restauración → vercel.com/account/tokens
+- [ ] **Borrar `C:\Users\franc\Downloads\los-gladiolos-*.json`** (clave privada de Google) después de guardarla en un gestor de contraseñas
+- [ ] **Cargar los datos bancarios** en `/admin/configuracion` — el campo ya existe y funciona
+- [ ] Decidir si el repositorio de GitHub queda público o pasa a privado
+
+### Lo que NO hay que volver a investigar
+
+- La verificación del negocio en Meta **no hace falta**: el Centro de seguridad dice que esta organización no tiene que completarla.
+- **No existe un número de prueba de Meta**: aparece recién al crear la app de desarrollador. Lo que hay conectado es el número real de la empresa.
+- Las variables `sensitive` de Vercel **no se pueden leer de vuelta**. Nunca.
+
+---
+
 ## 0. Estado del proyecto
 
 El proyecto está **restaurado y verificado**. El código vive en `C:\LosGladiolos\los-gladiolos\`, versionado en **https://github.com/francopittavino/LosGladiolos**.
