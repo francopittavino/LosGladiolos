@@ -1,0 +1,124 @@
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import { enviarTexto } from "@/lib/whatsapp";
+import { formatFecha } from "@/lib/format";
+
+/*
+  Avisos por WhatsApp (Meta Cloud API).
+
+  IMPORTANTE sobre las plantillas: Meta solo permite mensajes de texto libre
+  dentro de las 24hs posteriores a que la persona te haya escrito. Para el
+  entorno de prueba alcanza (el destinatario le escribe primero al numero de
+  prueba y se abre la ventana). Para produccion real hay que crear plantillas
+  aprobadas por Meta y usar enviarPlantilla() en lugar de enviarTexto().
+*/
+
+// TODO: mover a ConfiguracionGeneral para que el dueño lo edite desde el panel.
+const DATOS_BANCARIOS =
+  "(Datos bancarios pendientes de cargar - avisale al administrador)";
+
+function adminPhone(): string | null {
+  return process.env.WHATSAPP_ADMIN_PHONE || null;
+}
+
+function baseUrl(): string {
+  return process.env.NEXT_PUBLIC_BASE_URL || "https://los-gladiolos.vercel.app";
+}
+
+async function traerReserva(reservaId: string) {
+  return prisma.reserva.findUnique({
+    where: { id: reservaId },
+    include: { departamento: true },
+  });
+}
+
+export async function notificarNuevaReservaAlAdmin(reservaId: string) {
+  const admin = adminPhone();
+  const reserva = await traerReserva(reservaId);
+  if (!admin || !reserva) return;
+
+  await enviarTexto(
+    admin,
+    `🔔 NUEVA RESERVA PENDIENTE\n\n` +
+      `${reserva.nombreSolicitante}\n` +
+      `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)}\n` +
+      `${reserva.cantPersonas} persona(s)` +
+      (reserva.puedeSubirEscaleras ? "" : " — movilidad reducida") +
+      `\n${reserva.departamento?.nombre ?? "Sin departamento"}\n` +
+      `Total: $${Number(reserva.precioTotal).toLocaleString("es-AR")}\n\n` +
+      `Revisala acá:\n${baseUrl()}/admin/reservas/${reserva.id}`
+  );
+}
+
+export async function notificarReservaConfirmada(reservaId: string) {
+  const reserva = await traerReserva(reservaId);
+  if (!reserva) return;
+
+  const monto = reserva.montoSenia
+    ? `$${Number(reserva.montoSenia).toLocaleString("es-AR")}`
+    : "la seña";
+  const vence = reserva.vencimientoSenia
+    ? reserva.vencimientoSenia.toLocaleString("es-AR")
+    : "el plazo indicado";
+
+  await enviarTexto(
+    reserva.telefono,
+    `✅ ¡Tu reserva en Los Gladiolos fue aprobada!\n\n` +
+      `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)}\n` +
+      `${reserva.cantPersonas} persona(s)\n` +
+      `Total: $${Number(reserva.precioTotal).toLocaleString("es-AR")}\n\n` +
+      `Para confirmarla, transferí la seña de ${monto} antes del ${vence}.\n\n` +
+      `${DATOS_BANCARIOS}\n\n` +
+      `Si no recibimos la seña en ese plazo, la reserva se cancela automáticamente.`
+  );
+}
+
+export async function notificarReservaRechazada(reservaId: string) {
+  const reserva = await traerReserva(reservaId);
+  if (!reserva) return;
+
+  await enviarTexto(
+    reserva.telefono,
+    `Hola ${reserva.nombreSolicitante}, lamentablemente no podemos confirmar tu ` +
+      `reserva en Los Gladiolos para el ${formatFecha(reserva.fechaInicio)} al ` +
+      `${formatFecha(reserva.fechaFin)}.\n\n` +
+      `Cualquier consulta escribinos. ¡Gracias por contactarnos!`
+  );
+}
+
+export async function notificarViajanteConfirmado(reservaId: string) {
+  const reserva = await traerReserva(reservaId);
+  if (!reserva) return;
+
+  await enviarTexto(
+    reserva.telefono,
+    `✅ ¡Reserva confirmada en Los Gladiolos!\n\n` +
+      `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)}\n` +
+      `${reserva.departamento?.nombre ?? ""}\n\n` +
+      `Te esperamos. Check-in desde las 12:00 hs.`
+  );
+}
+
+export async function notificarReservaCanceladaSinSenia(reservaId: string) {
+  const reserva = await traerReserva(reservaId);
+  if (!reserva) return;
+
+  await enviarTexto(
+    reserva.telefono,
+    `Hola ${reserva.nombreSolicitante}, tu reserva en Los Gladiolos para el ` +
+      `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)} ` +
+      `fue cancelada porque no recibimos la seña dentro del plazo.\n\n` +
+      `Si querés reservar de nuevo, escribinos o entrá a ${baseUrl()}`
+  );
+}
+
+export async function notificarPendientesAlAdmin(cantidad: number) {
+  const admin = adminPhone();
+  if (!admin) return;
+
+  await enviarTexto(
+    admin,
+    `⏰ Tenés ${cantidad} reserva(s) pendiente(s) de revisar.\n\n` +
+      `${baseUrl()}/admin`
+  );
+}
