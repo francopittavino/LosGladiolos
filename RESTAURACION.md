@@ -5,12 +5,15 @@
 
 ## ✅ Resultado
 
-El sistema está restaurado en `C:\LosGladiolos\los-gladiolos\`, versionado en GitHub y **verificado funcionando en local contra la base real de Neon**:
+El sistema está restaurado en `C:\LosGladiolos\los-gladiolos\` — **única carpeta de código** —, versionado en GitHub y **verificado funcionando en local**:
 
 - `npx tsc --noEmit` y `npx next build` limpios — **16 rutas**, panel admin incluido
-- **21 de 21 pruebas de punta a punta en verde**: alta de reserva con asignación automática de departamento, precio desde la matriz de tarifas, rechazo por lista negra, validación de reglas y de fechas, cron protegido por `CRON_SECRET`, y panel admin exigiendo sesión
+- **21 de 21 pruebas de punta a punta** contra la base real de Neon: alta de reserva con asignación automática de departamento, precio desde la matriz de tarifas, rechazo por lista negra, validación de reglas y de fechas, cron protegido por `CRON_SECRET`, y panel admin exigiendo sesión
+- **8 de 8 pruebas contra Google Calendar**: autenticación de la cuenta de servicio, creación del evento de día completo con el color del departamento, actualización (reasignación) y borrado (rechazo o seña vencida)
 
 La base se usó de verdad en las pruebas y quedó limpia después (0 reservas, 0 lista negra; se conservan los 4 departamentos, las 35 tarifas y la configuración).
+
+Las carpetas auxiliares `_original_vercel/` y `_recuperado/` se borraron una vez integradas; quedan en el historial de git (commit `918acc7`).
 
 ---
 
@@ -226,12 +229,7 @@ Dos cosas a tener en cuenta:
 ## 8. Lo único que queda
 
 1. **Revocar el token de Vercel** usado para la restauración.
-2. **Confirmar que el repositorio de GitHub esté en privado.**
-3. **Credenciales de Google Calendar en local.** El token de proyecto no puede desencriptar las variables de producción. Se traen con:
-   ```bash
-   npx vercel login
-   npx vercel env pull .env.local
-   ```
-   Sin ellas, `googleCalendar.ts` devuelve `null` y la reserva se guarda igual (comportamiento best effort), pero no se puede probar la creación del evento en el calendario.
-   > Ojo: `vercel env pull` pisa el `.env.local` actual, que hoy tiene una contraseña de admin local (`ADMIN_PANEL_PASSWORD`) y un `CRON_SECRET` generados para poder probar. Después de pisarlo, revisá que esas dos tengan valor.
-4. **WhatsApp** — ver Fase 5.
+2. **Borrar del disco el JSON de la clave de Google** (`C:\Users\franc\Downloads\los-gladiolos-*.json`), después de guardarlo en un gestor de contraseñas.
+3. **Decidir la visibilidad del repositorio.** Hoy está público. No hay credenciales filtradas (verificado sobre todo el historial), pero queda a la vista la lógica de autenticación del panel y cómo se sirven las fotos de DNI.
+4. **Confirmar a qué calendario apunta producción.** El `GOOGLE_CALENDAR_ID` que se cargó en local es el de "Los Gladiolos PRUEBAS".
+5. **WhatsApp** — ver Fase 5. Es lo único del sistema que sigue sin estar.

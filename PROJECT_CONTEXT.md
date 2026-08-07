@@ -16,14 +16,7 @@ El 6/8 se perdió la carpeta de trabajo (`OneDrive\Escritorio\LosGladiolos Syste
 
 Verificado el 7/8: `tsc --noEmit` y `next build` limpios (16 rutas) y 21/21 pruebas de punta a punta en verde contra la base real.
 
-Carpetas auxiliares en el repositorio, que **no son el proyecto**:
-
-| Ruta | Qué es |
-|---|---|
-| `_original_vercel/` | Copia intacta de lo descargado de Vercel |
-| `_recuperado/` | La reconstrucción desde el historial de sesiones. Solo de ahí salieron `lib/whatsapp.ts` y `lib/notificaciones.ts` |
-
-El borrador incompleto del 6/8 a la tarde se descartó; queda en el historial de git, commit `0915862`.
+**`los-gladiolos/` es la única carpeta de código.** Las auxiliares de la restauración (`_original_vercel/`, la copia bajada de Vercel, y `_recuperado/`, la reconstrucción desde el historial) se borraron una vez integradas; quedan en el historial de git, commit `918acc7`. El borrador incompleto del 6/8 a la tarde también, en el commit `0915862`.
 
 ---
 
@@ -158,9 +151,9 @@ Tanto `googleCalendar.ts` como `whatsapp.ts` están escritos como **best effort*
 |---|---|---|
 | `DATABASE_URL` | ✅ | ✅ |
 | `BLOB_READ_WRITE_TOKEN` | ✅ | ✅ |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ `reservas@los-gladiolos.iam.gserviceaccount.com` | ⬜ |
-| `GOOGLE_PRIVATE_KEY` | ✅ | ⬜ |
-| `GOOGLE_CALENDAR_ID` | ✅ | ⬜ |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ `reservas@los-gladiolos.iam.gserviceaccount.com` | ✅ |
+| `GOOGLE_PRIVATE_KEY` | ✅ | ✅ clave nueva generada el 7/8 |
+| `GOOGLE_CALENDAR_ID` | ✅ | ⚠️ apunta al calendario **"Los Gladiolos PRUEBAS"** |
 | `ADMIN_PANEL_PASSWORD` | ✅ | ⚠️ valor local de desarrollo |
 | `CRON_SECRET` | ✅ | ⚠️ valor local de desarrollo |
 | `NEXT_PUBLIC_BASE_URL` | ✅ | ✅ `http://localhost:3000` |
@@ -168,7 +161,7 @@ Tanto `googleCalendar.ts` como `whatsapp.ts` están escritos como **best effort*
 | `WHATSAPP_ACCESS_TOKEN` | ⬜ **Pendiente** | ⬜ |
 | `WHATSAPP_ADMIN_PHONE` | ⬜ **Pendiente** | ⬜ |
 
-Las de Google faltan en local porque un token de proyecto de Vercel no puede desencriptar las variables de producción. Se traen con `npx vercel login && npx vercel env pull .env.local` — pero eso **pisa** el archivo, así que después hay que revisar que `ADMIN_PANEL_PASSWORD` y `CRON_SECRET` tengan valor para poder trabajar en local.
+**Las variables de Vercel son de tipo `sensitive`: no se pueden leer de vuelta**, ni por API ni con `vercel env pull`. Producción anda porque Vercel ya las tiene, pero para local hubo que **regenerar** la clave de Google. Ver `CREDENTIALS.md`.
 
 El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config({ path: ".env.local" })` con `dotenv`.
 
@@ -197,7 +190,7 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 8 | Cron de vencimiento de seña | ✅ Completo y **andando**: cron-job.org le pega cada hora en producción |
 | 9 | Deploy final en Vercel | ✅ Vivo en https://los-gladiolos.vercel.app — 🔄 falta que deploye desde GitHub en vez del CLI |
 
-> Estos ✅ están **verificados el 7/8**: build limpio y 21/21 pruebas de punta a punta contra la base real. La única parte sin probar en local es la creación del evento en Google Calendar, porque faltan esas credenciales en el `.env.local` (ver sección 7).
+> Estos ✅ están **verificados el 7/8**: build limpio, 21/21 pruebas de punta a punta contra la base real y 8/8 contra la API de Google Calendar (crear, actualizar y borrar eventos).
 
 ---
 
@@ -227,5 +220,6 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 - [ ] **Token de WhatsApp** y número del admin.
 - [ ] Plantillas de mensaje aprobadas por Meta, para poder escribirle a huéspedes fuera de la ventana de 24 hs.
 - [ ] Qué hacer con estadías de **más de 7 noches** — la matriz de tarifas llega hasta 7.
+- [ ] **Apuntar `GOOGLE_CALENDAR_ID` al calendario definitivo.** El que está configurado se llama "Los Gladiolos PRUEBAS"; hay que confirmar si producción usa ese mismo o el real, y compartir el calendario definitivo con la cuenta de servicio.
 - [x] ~~Texto de las reglas~~ — cargado en `ConfiguracionGeneral` (1201 caracteres), editable desde el panel.
 - [x] ~~Fotos del complejo~~ — en `public/images/`: hero, logo y 3 de galería.
