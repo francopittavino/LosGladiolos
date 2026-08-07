@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { enviarTexto } from "@/lib/whatsapp";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, formatFechaHora, formatPlazo } from "@/lib/format";
 
 /*
   Avisos por WhatsApp (Meta Cloud API).
@@ -68,9 +68,20 @@ export async function notificarReservaConfirmada(reservaId: string) {
   const monto = reserva.montoSenia
     ? `$${Number(reserva.montoSenia).toLocaleString("es-AR")}`
     : "la seña";
-  const vence = reserva.vencimientoSenia
-    ? reserva.vencimientoSenia.toLocaleString("es-AR")
-    : "el plazo indicado";
+
+  // El plazo se dice de las dos formas: cuanto tiempo tiene ("1 hora") y hasta
+  // que hora exacta. Con plazos cortos, solo la fecha no alcanza para que el
+  // huesped entienda la urgencia.
+  const plazo = reserva.vencimientoSenia
+    ? `Tenés ${formatPlazo(
+        Math.max(
+          1,
+          Math.round((reserva.vencimientoSenia.getTime() - Date.now()) / (60 * 60 * 1000))
+        )
+      )} para transferir la seña de ${monto}, hasta las ${formatFechaHora(
+        reserva.vencimientoSenia
+      )} hs.`
+    : `Para confirmarla, transferí la seña de ${monto} dentro del plazo indicado.`;
 
   await enviarTexto(
     reserva.telefono,
@@ -78,9 +89,11 @@ export async function notificarReservaConfirmada(reservaId: string) {
       `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)}\n` +
       `${reserva.cantPersonas} persona(s)\n` +
       `Total: $${Number(reserva.precioTotal).toLocaleString("es-AR")}\n\n` +
-      `Para confirmarla, transferí la seña de ${monto} antes del ${vence}.\n\n` +
+      `⏰ ${plazo}\n\n` +
       `${await datosBancarios()}\n\n` +
-      `Si no recibimos la seña en ese plazo, la reserva se cancela automáticamente.`
+      `Si no recibimos la seña en ese plazo, la reserva se cancela automáticamente y el ` +
+      `departamento queda libre para otro huésped.\n\n` +
+      `Cuando transfieras, mandanos el comprobante por acá.`
   );
 }
 
@@ -120,6 +133,28 @@ export async function notificarReservaCanceladaSinSenia(reservaId: string) {
       `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)} ` +
       `fue cancelada porque no recibimos la seña dentro del plazo.\n\n` +
       `Si querés reservar de nuevo, escribinos o entrá a ${baseUrl()}`
+  );
+}
+
+/**
+ * Cancelacion hecha a mano por el admin desde el panel (no por vencimiento).
+ * El motivo es opcional: si no lo cargo, no se inventa nada.
+ */
+export async function notificarReservaCanceladaPorAdmin(reservaId: string, motivo?: string) {
+  const reserva = await traerReserva(reservaId);
+  if (!reserva) return;
+
+  const explicacion = motivo?.trim() ? `\n\nMotivo: ${motivo.trim()}` : "";
+
+  await enviarTexto(
+    reserva.telefono,
+    `Hola ${reserva.nombreSolicitante}, tu reserva en Los Gladiolos para el ` +
+      `${formatFecha(reserva.fechaInicio)} al ${formatFecha(reserva.fechaFin)} ` +
+      `fue cancelada.${explicacion}\n\n` +
+      (reserva.seniaPagada
+        ? `Nos vamos a comunicar con vos por la devolución de la seña.\n\n`
+        : "") +
+      `Cualquier consulta escribinos por acá.`
   );
 }
 

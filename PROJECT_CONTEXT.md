@@ -98,10 +98,11 @@ La **base de datos es la fuente de verdad** de la disponibilidad, no Google Cale
 ### 3.4 Notificación y Confirmación (Admin)
 1. Reserva `PENDIENTE` → WhatsApp al admin con link a `/admin/reservas/[id]`.
 2. Ahí ve todos los datos + fotos de DNI. Botones **Confirmar**, **Rechazar** y **Reasignar**.
-3. **Si confirma:** se crea el evento en Google Calendar y le llega WhatsApp al huésped con el monto de seña, los datos bancarios y el plazo.
-4. **Si no paga en plazo:** el cron cancela la reserva, borra el evento del calendario y avisa al huésped.
+3. **Si confirma:** se crea el evento en Google Calendar y le llega WhatsApp al huésped con el monto de seña, los datos bancarios y el plazo (por defecto **1 hora**, dicho como duración y como hora exacta en horario de Argentina).
+4. **Si no paga en plazo:** se cancela la reserva (`CANCELADA_SIN_SENIA`), se borra el evento del calendario y se avisa al huésped. Lo dispara el cron y, además, cada pantalla del panel y cada consulta de disponibilidad hacen el barrido "al vuelo".
 5. **Si rechaza:** WhatsApp al huésped, no se toca el calendario.
 6. También puede marcar la seña como pagada y reasignar departamento (revalida disponibilidad y actualiza Calendar).
+7. **Cancelación manual:** sobre una reserva `CONFIRMADA` o `SENIA_PAGADA` hay un botón **Cancelar reserva** (confirmación en dos pasos + motivo opcional). Deja la reserva en `CANCELADA_MANUAL`, libera el departamento, borra el evento y le avisa al huésped por WhatsApp con el motivo.
 7. Mientras haya reservas pendientes, el cron le insiste al admin cada 2 horas.
 
 ### 3.5 Viajantes Frecuentes
@@ -116,11 +117,11 @@ La **base de datos es la fuente de verdad** de la disponibilidad, no Google Cale
 Fuente de verdad: `los-gladiolos/prisma/schema.prisma`, con 4 migraciones versionadas en `prisma/migrations/`. **Coincide exactamente con lo que hay aplicado en Neon** (verificado contra `information_schema` el 7/8).
 
 Modelos: `Departamento`, `Reserva`, `PersonaHuesped`, `ViajanteFrecuente`, `TarifaMatriz`, `ListaNegra`, `ConfiguracionGeneral`.
-Enums: `EstadoReserva` (PENDIENTE, CONFIRMADA, SENIA_PAGADA, RECHAZADA, CANCELADA_SIN_SENIA), `Planta` (BAJA, ALTA).
+Enums: `EstadoReserva` (PENDIENTE, CONFIRMADA, SENIA_PAGADA, RECHAZADA, CANCELADA_SIN_SENIA, CANCELADA_MANUAL), `Planta` (BAJA, ALTA).
 
 Puntos a tener presentes:
 
-- **`ConfiguracionGeneral`** es una fila única con `id = "singleton"`. Guarda `porcentajeSenia` (default **30**), `plazoVencimientoHoras` (default **24**), `textoReglas` y `ultimoRecordatorioPendientes`. Acá es donde el dueño edita las reglas del negocio sin tocar código.
+- **`ConfiguracionGeneral`** es una fila única con `id = "singleton"`. Guarda `porcentajeSenia` (default **30**), `plazoVencimientoHoras` (default **1**), `textoReglas` y `ultimoRecordatorioPendientes`. Acá es donde el dueño edita las reglas del negocio sin tocar código.
 - **`colorCalendario`** guarda un **`colorId` de Google Calendar** (string numérico, ej. `"3"`), **no** un color hexadecimal.
 - `PersonaHuesped` tiene `onDelete: Cascade` sobre la reserva.
 - `ViajanteFrecuente.numeroDni` es `@unique` — es la clave con la que el huésped se identifica en la web.
@@ -141,7 +142,7 @@ Verificado el **2026-08-07**. Esquema aplicado y con datos reales:
 | `PersonaHuesped` | 0 | — |
 | `ViajanteFrecuente` | 0 | — |
 | `ListaNegra` | 0 | — |
-| `ConfiguracionGeneral` | 1 | singleton: seña **30%**, plazo **24 hs**, texto de reglas ya cargado (1201 caracteres) |
+| `ConfiguracionGeneral` | 1 | singleton: seña **30%**, plazo **1 hora**, texto de reglas ya cargado (1201 caracteres) |
 | `_prisma_migrations` | — | historial de las 4 migraciones aplicadas |
 
 Los datos de prueba del 6/8 se borraron el 7/8. **Reservas, huéspedes, viajantes y lista negra están en cero**; para probar el panel admin hay que cargar algo primero.
@@ -214,7 +215,7 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 5 | WhatsApp Cloud API | ✅ Código completo — ⬜ falta el access token |
 | 6 | Panel admin | ✅ Completo |
 | 7 | Viajantes frecuentes | ✅ Completo |
-| 8 | Cron de vencimiento de seña | ✅ Completo y **andando**: cron-job.org le pega cada hora en producción |
+| 8 | Cron de vencimiento de seña | ✅ Completo y **andando**: cron-job.org le pega en producción — ⚠️ con el plazo en 1 hora hay que bajarlo a **cada 5 minutos** |
 | 9 | Deploy final en Vercel | ✅ Vivo en https://los-gladiolos.vercel.app — 🔄 falta que deploye desde GitHub en vez del CLI |
 
 > Estos ✅ están **verificados el 7/8**: build limpio, 21/21 pruebas de punta a punta contra la base real y 8/8 contra la API de Google Calendar (crear, actualizar y borrar eventos).
@@ -232,6 +233,9 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 2026-08-06 | Pedir el DNI por texto además de la foto | Permite validar la blacklist automáticamente |
 | 2026-08-06 | **La DB es la fuente de verdad de la disponibilidad**, no Calendar | Calendar puede fallar o no estar configurado; la reserva no debe depender de eso |
 | 2026-08-06 | Seña **30%**, plazo **24 hs** (editables en `ConfiguracionGeneral`) | Valores por defecto acordados |
+| 2026-08-07 | Plazo de seña a **1 hora** | Lo pidió el dueño: la reserva no puede quedar bloqueando un departamento un día entero esperando la transferencia |
+| 2026-08-07 | Estado `CANCELADA_MANUAL` aparte de `CANCELADA_SIN_SENIA` | Son cosas distintas: una la decide el admin, la otra la decide el reloj. Mezclarlas hacía imposible saber por qué se cayó una reserva |
+| 2026-08-07 | Barrido de vencidas también al abrir cada pantalla del panel | Con plazos de 1 hora, esperar al cron mostraba reservas ya vencidas como confirmadas |
 | 2026-08-06 | Eventos de día completo en Calendar, con `end.date` exclusivo | Refleja exactamente las noches ocupadas y evita que dos reservas consecutivas se vean superpuestas |
 | 2026-08-06 | Swap de planta baja → alta solo para reservas `PENDIENTE` | Al huésped todavía no se le comunicó su departamento, así que moverlo no rompe ninguna promesa |
 | 2026-08-06 | Cancelación de señas vencidas también "al vuelo" | El plan Hobby de Vercel solo permite un cron por día |

@@ -31,6 +31,10 @@ export function ConfiguracionForm({
       </label>
       <label className="block text-sm text-carbon">
         Plazo de vencimiento de la seña (horas)
+        <span className="mt-0.5 block text-xs text-carbon/60">
+          Cuánto tiempo tiene el huésped para transferir la seña desde que aprobás la
+          reserva. Pasado ese plazo la reserva se cancela sola y el departamento se libera.
+        </span>
         <input
           type="number"
           min={1}

@@ -9,6 +9,6 @@ export async function GET() {
   return NextResponse.json({
     textoReglas: config?.textoReglas ?? "",
     porcentajeSenia: config?.porcentajeSenia ?? 30,
-    plazoVencimientoHoras: config?.plazoVencimientoHoras ?? 24,
+    plazoVencimientoHoras: config?.plazoVencimientoHoras ?? 1,
   });
 }

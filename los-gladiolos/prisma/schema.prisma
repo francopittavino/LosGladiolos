@@ -29,6 +29,7 @@ model Reserva {
   vencimientoSenia    DateTime?
   aceptoReglas        Boolean   @default(false)
   estado              EstadoReserva @default(PENDIENTE)
+  motivoCancelacion   String?
   departamentoId      String?
   departamento        Departamento? @relation(fields: [departamentoId], references: [id])
   viajanteFrecuenteId String?
@@ -86,7 +87,7 @@ model ListaNegra {
 model ConfiguracionGeneral {
   id                            String    @id @default(cuid())
   porcentajeSenia               Decimal   @default(30)
-  plazoVencimientoHoras         Int       @default(24)
+  plazoVencimientoHoras         Int       @default(1)
   textoReglas                   String    @default("")
   datosBancarios                String    @default("")
   ultimoRecordatorioPendientes  DateTime?
@@ -99,6 +100,7 @@ enum EstadoReserva {
   SENIA_PAGADA
   RECHAZADA
   CANCELADA_SIN_SENIA
+  CANCELADA_MANUAL
 }
 
 enum Planta {

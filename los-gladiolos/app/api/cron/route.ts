@@ -8,8 +8,14 @@ const HORAS_ENTRE_RECORDATORIOS = 2;
 /**
  * Tareas periodicas del sistema. Le pegan:
  *  - Vercel Cron, una vez por dia (unico permitido en el plan Hobby).
- *  - Un servicio externo gratuito, cada hora, que es el que hace el trabajo
- *    real de mantener todo al dia.
+ *  - Un servicio externo gratuito (cron-job.org), que es el que hace el
+ *    trabajo real de mantener todo al dia. Su frecuencia tiene que ser mas
+ *    fina que el plazo de vencimiento de la seña: con el plazo en 1 hora,
+ *    cada 5 minutos.
+ *
+ * Igual las paginas del panel y la consulta de disponibilidad cancelan las
+ * señas vencidas "al vuelo", asi que el cron es la red de seguridad, no el
+ * unico camino.
  *
  * Ambos deben mandar el header `Authorization: Bearer <CRON_SECRET>`.
  * Vercel lo agrega solo cuando existe la variable de entorno CRON_SECRET.

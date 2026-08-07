@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { cancelarSeniasVencidas } from "@/lib/reservas";
 import { formatFecha } from "@/lib/format";
 import type { EstadoReserva } from "@prisma/client";
 
@@ -8,7 +9,8 @@ const FILTROS: { label: string; value: EstadoReserva | "TODAS" }[] = [
   { label: "Confirmadas", value: "CONFIRMADA" },
   { label: "Seña pagada", value: "SENIA_PAGADA" },
   { label: "Rechazadas", value: "RECHAZADA" },
-  { label: "Canceladas", value: "CANCELADA_SIN_SENIA" },
+  { label: "Vencidas sin seña", value: "CANCELADA_SIN_SENIA" },
+  { label: "Canceladas a mano", value: "CANCELADA_MANUAL" },
   { label: "Todas", value: "TODAS" },
 ];
 
@@ -18,6 +20,7 @@ const ESTADO_COLOR: Record<EstadoReserva, string> = {
   SENIA_PAGADA: "bg-celeste/20 text-celeste",
   RECHAZADA: "bg-coral/20 text-coral",
   CANCELADA_SIN_SENIA: "bg-carbon/10 text-carbon/60",
+  CANCELADA_MANUAL: "bg-carbon/10 text-carbon/60",
 };
 
 export default async function AdminReservasPage(
@@ -26,6 +29,10 @@ export default async function AdminReservasPage(
   const searchParams = await props.searchParams;
   const estadoParam = (searchParams?.estado as string) || "PENDIENTE";
   const filtro = FILTROS.some((f) => f.value === estadoParam) ? estadoParam : "PENDIENTE";
+
+  // Antes de listar se sueltan las señas vencidas, asi el listado nunca muestra
+  // como CONFIRMADA una reserva que ya se paso del plazo.
+  await cancelarSeniasVencidas();
 
   const reservas = await prisma.reserva.findMany({
     where: filtro === "TODAS" ? {} : { estado: filtro as EstadoReserva },

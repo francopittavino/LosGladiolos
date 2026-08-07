@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { departamentosDisponibles } from "@/lib/reservas";
-import { formatFecha } from "@/lib/format";
+import { cancelarSeniasVencidas, departamentosDisponibles } from "@/lib/reservas";
+import { formatFecha, formatFechaHora } from "@/lib/format";
 import { confirmarReserva, rechazarReserva, marcarSeniaPagada } from "./actions";
 import { ReasignarForm } from "./ReasignarForm";
+import { CancelarForm } from "./CancelarForm";
 
 function fotoUrl(url: string) {
   return `/api/admin/file?url=${encodeURIComponent(url)}`;
@@ -13,6 +14,11 @@ export default async function ReservaDetallePage(
   props: PageProps<"/admin/reservas/[id]">
 ) {
   const { id } = await props.params;
+
+  // Barrido "al vuelo" antes de mostrar: con plazos de pocas horas el cron
+  // puede quedar corto, y el admin no tiene que ver como CONFIRMADA una
+  // reserva cuya seña ya vencio.
+  await cancelarSeniasVencidas();
 
   const reserva = await prisma.reserva.findUnique({
     where: { id },
@@ -74,8 +80,14 @@ export default async function ReservaDetallePage(
               {reserva.seniaPagada ? "Pagada" : "Pendiente de pago"}
               {reserva.vencimientoSenia &&
                 !reserva.seniaPagada &&
-                ` (vence ${reserva.vencimientoSenia.toLocaleString("es-AR")})`}
+                ` (vence ${formatFechaHora(reserva.vencimientoSenia)} hs)`}
             </p>
+          </div>
+        )}
+        {reserva.motivoCancelacion && (
+          <div>
+            <p className="text-xs uppercase text-carbon/50">Motivo de cancelación</p>
+            <p className="font-semibold text-carbon">{reserva.motivoCancelacion}</p>
           </div>
         )}
         {reserva.viajanteFrecuente && (
@@ -156,6 +168,9 @@ export default async function ReservaDetallePage(
               Marcar seña pagada
             </button>
           </form>
+        )}
+        {(reserva.estado === "CONFIRMADA" || reserva.estado === "SENIA_PAGADA") && (
+          <CancelarForm reservaId={reserva.id} seniaPagada={reserva.seniaPagada} />
         )}
       </div>
     </div>

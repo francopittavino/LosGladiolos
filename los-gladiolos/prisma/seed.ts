@@ -48,7 +48,7 @@ async function main() {
     create: {
       id: "singleton",
       porcentajeSenia: 30,
-      plazoVencimientoHoras: 24,
+      plazoVencimientoHoras: 1,
       textoReglas:
         "Texto de reglas del alojamiento pendiente de definir por el administrador.",
     },

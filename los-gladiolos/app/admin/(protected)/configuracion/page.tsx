@@ -10,7 +10,7 @@ export default async function ConfiguracionPage() {
       <div className="mt-6">
         <ConfiguracionForm
           porcentajeSenia={Number(config?.porcentajeSenia ?? 30)}
-          plazoVencimientoHoras={config?.plazoVencimientoHoras ?? 24}
+          plazoVencimientoHoras={config?.plazoVencimientoHoras ?? 1}
           textoReglas={config?.textoReglas ?? ""}
           datosBancarios={config?.datosBancarios ?? ""}
         />
