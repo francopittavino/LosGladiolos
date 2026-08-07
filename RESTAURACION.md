@@ -65,16 +65,18 @@ Por defecto se sigue con el **bordó/Tailwind**, que es el que está integrado c
 
 ## 4. Plan de trabajo
 
-### Fase 0 — Poner todo bajo git 🔴 primero que nada
+### Fase 0 — Poner todo bajo git ✅ hecha (7/8), menos publicar
 
 Es lo que evita que esto vuelva a pasar.
 
-1. Inicializar el repositorio en `C:\LosGladiolos\` (así entran el código **y** los documentos de contexto).
-2. Verificar que `.gitignore` cubra `.env*`, `node_modules`, `.next` y `.vercel`. **Nunca commitear `.env.local`**: tiene la contraseña de la base de datos.
-3. Primer commit con todo lo que hay hoy, incluido `_recuperado/` — así el material recuperado queda a salvo antes de tocarlo.
-4. Publicar en GitHub. Con GitHub Desktop ya instalado, alcanza con "Add existing repository" → "Publish repository". **Repositorio privado**: el proyecto maneja fotos de DNI.
+1. ✅ Repositorio inicializado en `C:\LosGladiolos\`, rama `main` — entran el código **y** los documentos de contexto.
+2. ✅ `.gitignore` cubre `.env*`, `node_modules`, `.next`, `.vercel` y `**/.claude/settings.local.json`.
+3. ✅ Primer commit: **90 archivos**, incluido `_recuperado/`. El material recuperado quedó a salvo antes de tocarlo.
+4. ⬜ **Falta publicar en GitHub.** Con GitHub Desktop: "Add existing repository" → apuntar a `C:\LosGladiolos` → "Publish repository". **Marcar privado**: el proyecto maneja fotos de DNI.
 
 > **Git está disponible** a través de GitHub Desktop (`C:\Users\franc\AppData\Local\GitHubDesktop\app-3.6.3\resources\app\git\cmd\git.exe`), aunque no está en el PATH. Conviene instalar Git for Windows aparte para tenerlo suelto en la terminal.
+>
+> ⚠️ **`los-gladiolos/.claude/settings.local.json` quedó fuera del repo a propósito:** su lista de permisos tiene la cadena de conexión completa a Neon, con contraseña. No lo agregues a mano.
 
 ---
 
@@ -158,9 +160,9 @@ El código recuperado **fue escrito y probado el 6/8, pero no se volvió a ejecu
 ## 6. Checklist
 
 **Fase 0 — Git**
-- [ ] `git init` en `C:\LosGladiolos\`
-- [ ] `.gitignore` verificado (`.env*`, `node_modules`, `.next`, `.vercel`)
-- [ ] Primer commit con el material recuperado
+- [x] `git init` en `C:\LosGladiolos\` (rama `main`)
+- [x] `.gitignore` verificado (`.env*`, `node_modules`, `.next`, `.vercel`, settings de Claude)
+- [x] Primer commit con el material recuperado — 90 archivos
 - [ ] Publicado en GitHub como repositorio **privado**
 
 **Fase 1 — Proyecto**
