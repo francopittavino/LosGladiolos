@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { cancelarSeniasVencidas, departamentosDisponibles } from "@/lib/reservas";
+import { formatCamas } from "@/lib/camas";
 import { formatFecha, formatFechaHora } from "@/lib/format";
 import { confirmarReserva, rechazarReserva, marcarSeniaPagada } from "./actions";
 import { ReasignarForm } from "./ReasignarForm";
@@ -33,6 +34,7 @@ export default async function ReservaDetallePage(
     true,
     reserva.id
   );
+  const camas = formatCamas(reserva.camaMatrimonial, reserva.camasSimples);
   const opciones = reserva.departamento
     ? [reserva.departamento, ...opcionesDepto.filter((d) => d.id !== reserva.departamentoId)]
     : opcionesDepto;
@@ -66,6 +68,12 @@ export default async function ReservaDetallePage(
             {!reserva.puedeSubirEscaleras && "— movilidad reducida"}
           </p>
         </div>
+        {camas && (
+          <div>
+            <p className="text-xs uppercase text-carbon/50">Camas</p>
+            <p className="font-semibold text-carbon">{camas}</p>
+          </div>
+        )}
         <div>
           <p className="text-xs uppercase text-carbon/50">Precio total</p>
           <p className="font-semibold text-carbon">

@@ -84,6 +84,10 @@ Header, hero, galería del complejo y formulario de reserva con dos modos: hués
 - **Validación contra Lista Negra**: si un DNI está bloqueado, la reserva no se completa
 - Aceptación obligatoria de las reglas (texto editable desde el panel, modal `ReglasModal`)
 - Muestra el **precio total** calculado desde `TarifaMatriz` antes de enviar
+- **Distribución de camas** (reglas completas en `lib/camas.ts`, que las comparten el formulario y las dos APIs):
+  - **1 persona:** no se pregunta; `camaMatrimonial` y `camasSimples` quedan en `null`
+  - **2 a 4:** checkbox de **cama matrimonial** (arranca destildada) + cantidad de **camas simples**, que arranca en una por persona. El máximo es la cantidad de personas y el mínimo es el que hace que **las plazas alcancen**: la matrimonial cuenta 2 y cada simple 1, así que sin matrimonial quedan exactamente tantas simples como personas, y con matrimonial el piso baja (con 2 personas puede llegar a 0)
+  - **5:** distribución fija de **1 matrimonial + 3 simples**; no se elige, solo se le avisa al huésped
 
 ### 3.3 Disponibilidad y Asignación Automática
 La **base de datos es la fuente de verdad** de la disponibilidad, no Google Calendar. Calendar es solo el reflejo visual para el dueño.
@@ -103,7 +107,16 @@ La **base de datos es la fuente de verdad** de la disponibilidad, no Google Cale
 5. **Si rechaza:** WhatsApp al huésped, no se toca el calendario.
 6. También puede marcar la seña como pagada y reasignar departamento (revalida disponibilidad y actualiza Calendar).
 7. **Cancelación manual:** sobre una reserva `CONFIRMADA` o `SENIA_PAGADA` hay un botón **Cancelar reserva** (confirmación en dos pasos + motivo opcional). Deja la reserva en `CANCELADA_MANUAL`, libera el departamento, borra el evento y le avisa al huésped por WhatsApp con el motivo.
-7. Mientras haya reservas pendientes, el cron le insiste al admin cada 2 horas.
+8. Mientras haya reservas pendientes, el cron le insiste al admin cada 2 horas.
+
+### 3.4.1 Formato del evento en Calendar
+El calendario lo lee la persona que limpia, así que el título está armado para que se entienda de un vistazo en la vista de mes, donde se corta enseguida:
+
+```
+Depto 1 — 2p — Juan Perez
+```
+
+**Departamento → cantidad de personas (`Np`) → nombre.** La cantidad va segunda a pedido de los dueños: es el dato operativo que se mira primero. La descripción del evento lleva el resto (teléfono, disposición de camas, check-in y check-out).
 
 ### 3.5 Viajantes Frecuentes
 - ABM en el panel admin: nombre, teléfono, **DNI único**, cantidad de personas habitual, dominio del vehículo, foto de DNI, notas.
@@ -236,6 +249,11 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 2026-08-07 | Plazo de seña a **1 hora** | Lo pidió el dueño: la reserva no puede quedar bloqueando un departamento un día entero esperando la transferencia |
 | 2026-08-07 | Estado `CANCELADA_MANUAL` aparte de `CANCELADA_SIN_SENIA` | Son cosas distintas: una la decide el admin, la otra la decide el reloj. Mezclarlas hacía imposible saber por qué se cayó una reserva |
 | 2026-08-07 | Barrido de vencidas también al abrir cada pantalla del panel | Con plazos de 1 hora, esperar al cron mostraba reservas ya vencidas como confirmadas |
+| 2026-08-08 | Cantidad de personas en el título del evento, como `2p`, justo después del departamento | Lo pidieron los dueños: es lo primero que mira quien limpia, y en la vista de mes el título se corta |
+| 2026-08-08 | `camaMatrimonial` es `Boolean?`, no `Boolean` | Con un default `true` no se podría distinguir "matrimonial" de "no aplica", y el calendario mostraría la línea de camas en reservas de 1 persona |
+| 2026-08-08 | El mínimo de camas simples baja a 0 si tildan matrimonial | Con mínimo 1 fijo, la pareja típica de 2 obligaba a preparar una cama que no usa nadie |
+| 2026-08-08 | Las plazas tienen que alcanzar: `matrimonial×2 + simples >= personas` | No tenía sentido permitir 4 personas con 2 plazas. Se aplica achicando las opciones que se ofrecen, no con un cartel de error: el huésped nunca llega a elegir algo inválido |
+| 2026-08-08 | Las reglas de camas viven en `lib/camas.ts`, no en `lib/reservas.ts` | `reservas.ts` importa Calendar y notificaciones, que son `server-only`; el formulario público es un componente cliente y necesita las mismas reglas. Duplicarlas era garantizar que pantalla y servidor se contradijeran |
 | 2026-08-06 | Eventos de día completo en Calendar, con `end.date` exclusivo | Refleja exactamente las noches ocupadas y evita que dos reservas consecutivas se vean superpuestas |
 | 2026-08-06 | Swap de planta baja → alta solo para reservas `PENDIENTE` | Al huésped todavía no se le comunicó su departamento, así que moverlo no rompe ninguna promesa |
 | 2026-08-06 | Cancelación de señas vencidas también "al vuelo" | El plan Hobby de Vercel solo permite un cron por día |

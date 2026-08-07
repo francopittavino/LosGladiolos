@@ -7,6 +7,7 @@ import {
   calcularPrecio,
   validarRangoFechas,
 } from "@/lib/reservas";
+import { normalizarCamas } from "@/lib/camas";
 import { notificarNuevaReservaAlAdmin } from "@/lib/notificaciones";
 
 type PersonaInput = {
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     fechaFin,
     cantPersonas,
     puedeSubirEscaleras,
+    camaMatrimonial,
+    camasSimples,
     aceptoReglas,
     personas,
   } = body as {
@@ -34,6 +37,8 @@ export async function POST(request: Request) {
     fechaFin: string;
     cantPersonas: number;
     puedeSubirEscaleras: boolean;
+    camaMatrimonial?: boolean | null;
+    camasSimples?: number | null;
     aceptoReglas: boolean;
     personas: PersonaInput[];
   };
@@ -116,6 +121,9 @@ export async function POST(request: Request) {
       fechaFin: fin,
       cantPersonas,
       puedeSubirEscaleras: Boolean(puedeSubirEscaleras),
+      // No se confia en lo que mande el cliente: las reglas de distribucion se
+      // reaplican en el servidor (limites, y el caso fijo de 5 personas).
+      ...normalizarCamas(cantPersonas, camaMatrimonial, camasSimples),
       precioTotal,
       aceptoReglas: true,
       estado: "PENDIENTE",

@@ -1,5 +1,6 @@
 import "server-only";
 import { google } from "googleapis";
+import { formatCamas } from "@/lib/camas";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
@@ -12,6 +13,9 @@ export type DatosEventoReserva = {
   departamentoNombre: string;
   colorCalendario: string;
   esViajanteFrecuente?: boolean;
+  /** Sin valor en las reservas de 1 persona, donde no se elige distribucion. */
+  camaMatrimonial?: boolean | null;
+  camasSimples?: number | null;
 };
 
 /**
@@ -53,15 +57,27 @@ function aFechaISO(fecha: Date): string {
  */
 function armarEvento(datos: DatosEventoReserva) {
   const tipo = datos.esViajanteFrecuente ? "Viajante frecuente" : "Huésped";
+
+  // El titulo lleva la cantidad de personas justo despues del departamento
+  // ("Depto 1 — 2p — Juan Perez"): es lo primero que necesita ver quien
+  // limpia, y en la vista de mes del calendario el titulo se corta enseguida.
+  const camas = formatCamas(
+    datos.camaMatrimonial ?? null,
+    datos.camasSimples ?? null
+  );
+
   return {
-    summary: `${datos.departamentoNombre} — ${datos.nombreSolicitante}`,
+    summary: `${datos.departamentoNombre} — ${datos.cantPersonas}p — ${datos.nombreSolicitante}`,
     description: [
       `${tipo}: ${datos.nombreSolicitante}`,
       `Teléfono: ${datos.telefono}`,
       `Personas: ${datos.cantPersonas}`,
+      camas && `Camas: ${camas}`,
       `Check-in: ${aFechaISO(datos.fechaInicio)} desde 12:00`,
       `Check-out: ${aFechaISO(datos.fechaFin)} hasta 22:00`,
-    ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
     colorId: datos.colorCalendario,
     start: { date: aFechaISO(datos.fechaInicio) },
     end: { date: aFechaISO(datos.fechaFin) },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCamas, minimoCamasSimples, normalizarCamas } from "@/lib/camas";
 import { ReglasModal } from "./ReglasModal";
 
 type PersonaForm = {
@@ -84,6 +85,9 @@ export function HuespedGeneralForm() {
   const [fechaFin, setFechaFin] = useState("");
   const [cantPersonas, setCantPersonas] = useState(1);
   const [movilidadReducida, setMovilidadReducida] = useState(false);
+  // Arranca con cada persona en su cama simple; el matrimonial se tilda aparte.
+  const [camaMatrimonial, setCamaMatrimonial] = useState(false);
+  const [camasSimples, setCamasSimples] = useState(1);
   const [personas, setPersonas] = useState<PersonaForm[]>([personaVacia()]);
   const [aceptoReglas, setAceptoReglas] = useState(false);
   const [textoReglas, setTextoReglas] = useState("");
@@ -174,6 +178,27 @@ export function HuespedGeneralForm() {
     }
   }
 
+  // Cambiar la cantidad de personas vuelve la distribucion al arranque: no
+  // tiene sentido arrastrar "3 simples" a una reserva de 2.
+  function cambiarCantPersonas(nueva: number) {
+    setCantPersonas(nueva);
+    setCamaMatrimonial(false);
+    setCamasSimples(nueva);
+  }
+
+  function cambiarCamaMatrimonial(tildada: boolean) {
+    setCamaMatrimonial(tildada);
+    // Al destildarla las plazas dejan de alcanzar: se suben al nuevo minimo.
+    setCamasSimples((prev) => Math.max(prev, minimoCamasSimples(tildada, cantPersonas)));
+  }
+
+  const minSimples = minimoCamasSimples(camaMatrimonial, cantPersonas);
+  const opcionesSimples = Array.from(
+    { length: cantPersonas - minSimples + 1 },
+    (_, i) => minSimples + i
+  );
+  const camasElegidas = normalizarCamas(cantPersonas, camaMatrimonial, camasSimples);
+
   const personasCompletas = personas.every(
     (p) => p.numeroDni.trim() && p.fotoDniFrente && p.fotoDniDorso
   );
@@ -199,6 +224,8 @@ export function HuespedGeneralForm() {
           fechaFin,
           cantPersonas,
           puedeSubirEscaleras: !movilidadReducida,
+          camaMatrimonial: camasElegidas.camaMatrimonial,
+          camasSimples: camasElegidas.camasSimples,
           aceptoReglas,
           personas: personas.map((p) => ({
             nombre: p.nombre || undefined,
@@ -278,7 +305,7 @@ export function HuespedGeneralForm() {
           <select
             className="mt-1 w-full rounded-lg border border-carbon/20 px-3 py-2"
             value={cantPersonas}
-            onChange={(e) => setCantPersonas(Number(e.target.value))}
+            onChange={(e) => cambiarCantPersonas(Number(e.target.value))}
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -297,6 +324,50 @@ export function HuespedGeneralForm() {
             Alguna persona tiene movilidad reducida
           </label>
         </div>
+        {cantPersonas >= 2 && cantPersonas <= 4 && (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-carbon">
+              ¿Cómo preferís las camas?
+            </label>
+            <div className="mt-2 flex flex-wrap items-center gap-6">
+              <label className="flex items-center gap-2 text-sm text-carbon">
+                <input
+                  type="checkbox"
+                  checked={camaMatrimonial}
+                  onChange={(e) => cambiarCamaMatrimonial(e.target.checked)}
+                />
+                Cama matrimonial
+              </label>
+              <label className="flex items-center gap-2 text-sm text-carbon">
+                Camas simples
+                <select
+                  className="rounded-lg border border-carbon/20 px-3 py-2"
+                  value={camasSimples}
+                  onChange={(e) => setCamasSimples(Number(e.target.value))}
+                >
+                  {opcionesSimples.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-carbon/60">
+              Te preparamos{" "}
+              {formatCamas(camasElegidas.camaMatrimonial, camasElegidas.camasSimples)}. Las
+              opciones que ves son las que alcanzan para {cantPersonas} personas.
+            </p>
+          </div>
+        )}
+        {cantPersonas === 5 && (
+          <div className="sm:col-span-2">
+            <p className="rounded-lg bg-celeste/10 px-4 py-2 text-sm text-carbon">
+              Para 5 personas la distribución es fija:{" "}
+              <strong>1 cama matrimonial y 3 camas simples</strong>.
+            </p>
+          </div>
+        )}
       </div>
 
       {disponibilidad.estado === "cargando" && (

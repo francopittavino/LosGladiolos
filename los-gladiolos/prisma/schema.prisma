@@ -23,6 +23,10 @@ model Reserva {
   fechaFin            DateTime
   cantPersonas        Int
   puedeSubirEscaleras Boolean   @default(true)
+  /// Distribucion de camas. Solo se elige de 2 personas en adelante; con 1
+  /// persona ambos quedan null. Con 5 es fija: matrimonial + 3 simples.
+  camaMatrimonial     Boolean?
+  camasSimples        Int?
   precioTotal         Decimal
   montoSenia          Decimal?
   seniaPagada         Boolean   @default(false)

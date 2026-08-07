@@ -7,6 +7,7 @@ import {
   calcularPrecio,
   validarRangoFechas,
 } from "@/lib/reservas";
+import { normalizarCamas } from "@/lib/camas";
 import { notificarViajanteConfirmado } from "@/lib/notificaciones";
 import { crearEventoReserva } from "@/lib/googleCalendar";
 
@@ -71,6 +72,9 @@ export async function POST(request: Request) {
       fechaFin: fin,
       cantPersonas,
       puedeSubirEscaleras: puedeSubirEscaleras ?? true,
+      // Al viajante frecuente no se le pregunta nada (reserva de un solo paso):
+      // queda el arranque, una cama simple por persona, salvo el caso fijo de 5.
+      ...normalizarCamas(cantPersonas, false, cantPersonas),
       precioTotal,
       aceptoReglas: true,
       estado: "CONFIRMADA",
@@ -89,6 +93,8 @@ export async function POST(request: Request) {
       fechaInicio: reserva.fechaInicio,
       fechaFin: reserva.fechaFin,
       cantPersonas: reserva.cantPersonas,
+      camaMatrimonial: reserva.camaMatrimonial,
+      camasSimples: reserva.camasSimples,
       departamentoNombre: reserva.departamento.nombre,
       colorCalendario: reserva.departamento.colorCalendario,
       esViajanteFrecuente: true,

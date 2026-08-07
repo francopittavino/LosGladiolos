@@ -49,6 +49,8 @@ export async function confirmarReserva(reservaId: string) {
         fechaInicio: reserva.fechaInicio,
         fechaFin: reserva.fechaFin,
         cantPersonas: reserva.cantPersonas,
+        camaMatrimonial: reserva.camaMatrimonial,
+        camasSimples: reserva.camasSimples,
         departamentoNombre: reserva.departamento.nombre,
         colorCalendario: reserva.departamento.colorCalendario,
       })
@@ -196,6 +198,8 @@ export async function reasignarDepartamento(
       fechaInicio: reserva.fechaInicio,
       fechaFin: reserva.fechaFin,
       cantPersonas: reserva.cantPersonas,
+      camaMatrimonial: reserva.camaMatrimonial,
+      camasSimples: reserva.camasSimples,
       departamentoNombre: nuevoDepartamento.nombre,
       colorCalendario: nuevoDepartamento.colorCalendario,
       esViajanteFrecuente: Boolean(reserva.viajanteFrecuenteId),
