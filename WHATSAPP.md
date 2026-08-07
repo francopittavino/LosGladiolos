@@ -104,7 +104,42 @@ Ahí figura el **Identificador del número de teléfono** (Phone number ID). Es 
 
 Mientras la app esté en modo desarrollo, Meta solo deja escribirle a números autorizados.
 
-En la misma pantalla de Configuración de la API → campo **Para** → **Administrar lista de números de teléfono** → agregar el celular del dueño. Le va a llegar un mensaje de WhatsApp que tiene que aceptar.
+En la misma pantalla de Configuración de la API → campo **Para** → **Administrar lista de números de teléfono** → agregar el celular del dueño.
+
+#### ⚠️ El formato del número (causa #1 de que no llegue el código)
+
+Para WhatsApp, un celular argentino se identifica con un **`9`** después del código de país:
+
+```
++54 9 343 5074866   →   +5493435074866
+    ↑
+    este 9 es obligatorio
+```
+
+Código de país `54`, después `9`, la característica **sin el 0**, el número **sin el 15**. Si falta el `9`, Meta busca un WhatsApp inexistente y **el código no llega, sin dar ningún error**.
+
+#### El código llega por WhatsApp, no por SMS
+
+Llega como mensaje de WhatsApp desde el número de prueba de Meta. Mirar los SMS no sirve.
+
+#### Si aparece "Reduce la frecuencia o tómate un descanso"
+
+Es la protección antispam **a nivel cuenta de Facebook**, no de WhatsApp. Se dispara por reintentar muchas veces seguidas y **cada reintento la extiende**. Dura de horas a un día. Lo único que funciona es dejar de tocarlo y volver más tarde.
+
+**Este paso no bloquea nada más.** El token permanente (A.1–A.3), las plantillas (Parte C) y la verificación del negocio se pueden hacer igual: ninguno envía mensajes.
+
+---
+
+### A.6 Verificar las credenciales SIN enviar mensajes
+
+Cuando el envío está bloqueado, o simplemente para descartar problemas antes de probar, se puede validar todo con una consulta de lectura:
+
+```
+GET https://graph.facebook.com/v25.0/{PHONE_NUMBER_ID}
+    Authorization: Bearer {ACCESS_TOKEN}
+```
+
+Si devuelve los datos del número, quedan probadas las tres cosas que de verdad pueden estar mal: **el token sirve**, **tiene los permisos** y **el identificador del número es el correcto**. No manda ningún mensaje y no cuenta para ningún límite.
 
 ---
 
@@ -144,6 +179,8 @@ Hoy `lib/notificaciones.ts` usa `enviarTexto()` para los seis avisos. Sirve para
 
 `lib/whatsapp.ts` ya tiene lista la función `enviarPlantilla(numero, nombrePlantilla, idioma, parametros)`. Lo que falta es crear las plantillas en Meta y cambiar las llamadas.
 
+> Crear plantillas y mandarlas a aprobar **no envía mensajes**: se puede hacer aunque la cuenta esté con el límite antispam activo.
+
 ### Plantillas a crear
 
 En **business.facebook.com** → **Administrador de WhatsApp** → **Plantillas de mensajes** → **Crear plantilla**.
@@ -181,7 +218,7 @@ En este orden, porque cada paso descarta una causa distinta de falla:
 
 | Qué se ve | Qué significa |
 |---|---|
-| `(#131030) Recipient phone number not in allowed list` | Falta agregar el número en la lista de prueba (paso A.5) |
+| `(#131030) Recipient phone number not in allowed list` | Falta agregar el número en la lista de prueba (paso A.5) — o está cargado **sin el `9`** |
 | `(#131047) Re-engagement message` | Pasaron las 24 hs: hay que usar plantilla |
 | `(#200) Permissions error` | Faltó asignar la WABA al usuario del sistema (paso A.2) |
 | `(#132001) Template name does not exist` | La plantilla no está aprobada, o el idioma no coincide |
