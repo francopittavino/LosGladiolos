@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Departamento {
+  id              String   @id @default(cuid())
+  nombre          String
+  capacidad       Int      @default(5)
+  planta          Planta
+  colorCalendario String
+  reservas        Reserva[]
+}
+
+model Reserva {
+  id                  String    @id @default(cuid())
+  nombreSolicitante   String
+  telefono            String
+  fechaInicio         DateTime
+  fechaFin            DateTime
+  cantPersonas        Int
+  puedeSubirEscaleras Boolean   @default(true)
+  precioTotal         Decimal
+  montoSenia          Decimal?
+  seniaPagada         Boolean   @default(false)
+  vencimientoSenia    DateTime?
+  aceptoReglas        Boolean   @default(false)
+  estado              EstadoReserva @default(PENDIENTE)
+  departamentoId      String?
+  departamento        Departamento? @relation(fields: [departamentoId], references: [id])
+  viajanteFrecuenteId String?
+  viajanteFrecuente   ViajanteFrecuente? @relation(fields: [viajanteFrecuenteId], references: [id])
+  googleEventId       String?
+  personas            PersonaHuesped[]
+  createdAt           DateTime  @default(now())
+
+  @@index([departamentoId])
+  @@index([estado])
+}
+
+model PersonaHuesped {
+  id            String  @id @default(cuid())
+  reservaId     String
+  reserva       Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  nombre        String?
+  numeroDni     String?
+  fotoDniFrente String?
+  fotoDniDorso  String?
+
+  @@index([reservaId])
+}
+
+model ViajanteFrecuente {
+  id                   String   @id @default(cuid())
+  nombre               String
+  telefono             String
+  numeroDni            String   @unique
+  cantPersonasHabitual Int
+  dominioVehiculo      String?
+  fotoDni              String?
+  notas                String?
+  reservas             Reserva[]
+}
+
+model TarifaMatriz {
+  id           String   @id @default(cuid())
+  cantPersonas Int
+  cantNoches   Int
+  precioTotal  Decimal
+  updatedAt    DateTime @updatedAt
+
+  @@unique([cantPersonas, cantNoches])
+}
+
+model ListaNegra {
+  id        String   @id @default(cuid())
+  numeroDni String   @unique
+  nombre    String?
+  motivo    String?
+  createdAt DateTime @default(now())
+}
+
+model ConfiguracionGeneral {
+  id                            String    @id @default(cuid())
+  porcentajeSenia               Decimal   @default(30)
+  plazoVencimientoHoras         Int       @default(24)
+  textoReglas                   String    @default("")
+  ultimoRecordatorioPendientes  DateTime?
+  updatedAt                     DateTime  @updatedAt
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  SENIA_PAGADA
+  RECHAZADA
+  CANCELADA_SIN_SENIA
+}
+
+enum Planta {
+  BAJA
+  ALTA
+}
