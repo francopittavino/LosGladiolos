@@ -40,6 +40,15 @@ export function minimoCamasSimples(camaMatrimonial: boolean, cantPersonas: numbe
 }
 
 /**
+ * Maximo de camas simples. Con matrimonial baja uno: si ya hay una cama que
+ * duerme a dos, ofrecer ademas una simple por cabeza es hacer preparar camas
+ * que no usa nadie.
+ */
+export function maximoCamasSimples(camaMatrimonial: boolean, cantPersonas: number): number {
+  return camaMatrimonial ? cantPersonas - 1 : cantPersonas;
+}
+
+/**
  * Reglas completas, aplicadas tanto al armar el formulario como al guardar:
  *
  *  - 1 persona: no se pregunta nada, queda sin dato.
@@ -60,9 +69,11 @@ export function normalizarCamas(
 
   const matrimonial = camaMatrimonial === true;
   const pedidas = Number(camasSimples);
+  const minimo = minimoCamasSimples(matrimonial, cantPersonas);
+  const maximo = maximoCamasSimples(matrimonial, cantPersonas);
   const simples = Number.isInteger(pedidas)
-    ? Math.min(Math.max(pedidas, minimoCamasSimples(matrimonial, cantPersonas)), cantPersonas)
-    : cantPersonas;
+    ? Math.min(Math.max(pedidas, minimo), maximo)
+    : maximo;
 
   return { camaMatrimonial: matrimonial, camasSimples: simples };
 }

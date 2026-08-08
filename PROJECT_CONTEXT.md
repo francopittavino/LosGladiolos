@@ -86,7 +86,7 @@ Header, hero, galería del complejo y formulario de reserva con dos modos: hués
 - Muestra el **precio total** calculado desde `TarifaMatriz` antes de enviar
 - **Distribución de camas** (reglas completas en `lib/camas.ts`, que las comparten el formulario y las dos APIs):
   - **1 persona:** no se pregunta; `camaMatrimonial` y `camasSimples` quedan en `null`
-  - **2 a 4:** checkbox de **cama matrimonial** (arranca destildada) + cantidad de **camas simples**, que arranca en una por persona. El máximo es la cantidad de personas y el mínimo es el que hace que **las plazas alcancen**: la matrimonial cuenta 2 y cada simple 1, así que sin matrimonial quedan exactamente tantas simples como personas, y con matrimonial el piso baja (con 2 personas puede llegar a 0)
+  - **2 a 4:** checkbox de **cama matrimonial** (arranca destildada) + cantidad de **camas simples**, que arranca en una por persona. La matrimonial cuenta 2 plazas y cada simple 1. El **mínimo** es el que hace que las plazas alcancen; el **máximo** es la cantidad de personas, y baja uno si tildan matrimonial. Combinaciones posibles: `2p` → 2 simples, o matrimonial + 0/1 · `3p` → 3 simples, o matrimonial + 1/2 · `4p` → 4 simples, o matrimonial + 2/3
   - **5:** distribución fija de **1 matrimonial + 3 simples**; no se elige, solo se le avisa al huésped
 
 ### 3.3 Disponibilidad y Asignación Automática
@@ -253,6 +253,7 @@ El CLI de Prisma lee `.env.local` gracias a `prisma.config.ts`, que hace `config
 | 2026-08-08 | `camaMatrimonial` es `Boolean?`, no `Boolean` | Con un default `true` no se podría distinguir "matrimonial" de "no aplica", y el calendario mostraría la línea de camas en reservas de 1 persona |
 | 2026-08-08 | El mínimo de camas simples baja a 0 si tildan matrimonial | Con mínimo 1 fijo, la pareja típica de 2 obligaba a preparar una cama que no usa nadie |
 | 2026-08-08 | Las plazas tienen que alcanzar: `matrimonial×2 + simples >= personas` | No tenía sentido permitir 4 personas con 2 plazas. Se aplica achicando las opciones que se ofrecen, no con un cartel de error: el huésped nunca llega a elegir algo inválido |
+| 2026-08-08 | Con matrimonial tildada, el máximo de simples baja uno | Si ya hay una cama que duerme a dos, ofrecer además una simple por cabeza hace preparar camas que no usa nadie. Queda una sola de más como margen |
 | 2026-08-08 | Las reglas de camas viven en `lib/camas.ts`, no en `lib/reservas.ts` | `reservas.ts` importa Calendar y notificaciones, que son `server-only`; el formulario público es un componente cliente y necesita las mismas reglas. Duplicarlas era garantizar que pantalla y servidor se contradijeran |
 | 2026-08-06 | Eventos de día completo en Calendar, con `end.date` exclusivo | Refleja exactamente las noches ocupadas y evita que dos reservas consecutivas se vean superpuestas |
 | 2026-08-06 | Swap de planta baja → alta solo para reservas `PENDIENTE` | Al huésped todavía no se le comunicó su departamento, así que moverlo no rompe ninguna promesa |

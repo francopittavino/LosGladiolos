@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatCamas, minimoCamasSimples, normalizarCamas } from "@/lib/camas";
+import {
+  formatCamas,
+  maximoCamasSimples,
+  minimoCamasSimples,
+  normalizarCamas,
+} from "@/lib/camas";
 import { ReglasModal } from "./ReglasModal";
 
 type PersonaForm = {
@@ -189,12 +194,18 @@ export function HuespedGeneralForm() {
   function cambiarCamaMatrimonial(tildada: boolean) {
     setCamaMatrimonial(tildada);
     // Al destildarla las plazas dejan de alcanzar: se suben al nuevo minimo.
-    setCamasSimples((prev) => Math.max(prev, minimoCamasSimples(tildada, cantPersonas)));
+    setCamasSimples((prev) =>
+      Math.min(
+        Math.max(prev, minimoCamasSimples(tildada, cantPersonas)),
+        maximoCamasSimples(tildada, cantPersonas)
+      )
+    );
   }
 
   const minSimples = minimoCamasSimples(camaMatrimonial, cantPersonas);
+  const maxSimples = maximoCamasSimples(camaMatrimonial, cantPersonas);
   const opcionesSimples = Array.from(
-    { length: cantPersonas - minSimples + 1 },
+    { length: maxSimples - minSimples + 1 },
     (_, i) => minSimples + i
   );
   const camasElegidas = normalizarCamas(cantPersonas, camaMatrimonial, camasSimples);
