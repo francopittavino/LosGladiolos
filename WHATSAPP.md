@@ -84,26 +84,62 @@ Se recorrió la cuenta entera. Esto es lo que hay, y difiere bastante de lo que 
 
 ---
 
-## 🚧 Bloqueo activo: límite antispam de la cuenta
+## ✅ Resuelto: el límite antispam y el registro de desarrollador
 
-**El registro de desarrollador quedó a mitad de camino**, en el paso "Verify account", esperando un código de 6 dígitos por SMS.
+Durante el 7/8 la cuenta estuvo con el límite antispam de Facebook activo, que impedía recibir cualquier código y dejó el registro de desarrollador parado en "Verify account". **Se levantó y el registro se completó el 2026-08-09.**
 
-Al intentar reenviarlo, Meta devolvió en rojo:
+> Queda como referencia por si vuelve a aparecer: el mensaje es *"Reduce la frecuencia o tómate un descanso..."*, dura de horas a 24 hs, y **cada reintento lo extiende**. Mientras dura, Meta no manda ningún mensaje y no avisa. El formulario de registro quiere el número **nacional pelado** (`3435074866` con país Argentina), sin el `9` adelante — a diferencia de `WHATSAPP_ADMIN_PHONE`, donde el `9` sí va.
 
-> *"Reduce la frecuencia o tómate un descanso para evitar restricciones en tu cuenta. Limitamos la frecuencia con la que puedes publicar, comentar o hacer otras cosas durante un cierto período de tiempo a fin de proteger a la comunidad frente al spam."*
+---
 
-**Esto es lo que explica que nunca llegara ningún código** — ni el de WhatsApp ni el del SMS. No es el formato del número: **la cuenta está limitada y Meta directamente no manda el mensaje**, sin avisar.
+## 🚧 Bloqueo activo: la app no se deja vincular al portafolio
 
-### Reglas mientras dure
+**Estado al 2026-08-09.**
 
-- **No reintentar nada.** Cada intento extiende el bloqueo. Aplica desde cualquier dispositivo, no solo desde acá.
-- Dura entre unas horas y 24 hs.
-- El formulario de Meta quiere el número **nacional pelado**: `3435074866` con país Argentina (+54). Rechaza el `9` adelante. (El `9` sí es necesario en `WHATSAPP_ADMIN_PHONE`, que es otra cosa: ahí va `5493434512995` para el número de la empresa.)
+La app de desarrollador **existe**:
 
-### Cuando se levante, en este orden
+| Qué | Valor |
+|---|---|
+| Nombre | **Los Gladiolos Reservas** |
+| Identificador de la aplicación | **`2636276260158140`** |
+| Modo | En desarrollo |
+| Tipo | Ninguno |
+| Correo de contacto | `alemaraccesorios@yahoo.com.ar` (el de la cuenta de Facebook; se puede cambiar en Configuración → Información básica) |
 
-1. Terminar el registro de desarrollador (código por SMS).
-2. Crear la app, agregarle el producto WhatsApp y vincularla al portafolio.
+Pero quedó **a medio crear**: el asistente falló justo al confirmar, así que la app **no está vinculada al portafolio** y **no tiene aplicado el caso de uso de WhatsApp**.
+
+**La consecuencia concreta: WhatsApp no figura entre los productos disponibles del panel de la app.** El producto aparece recién cuando la app pertenece a un portafolio empresarial. Por eso el vínculo con el portafolio es el bloqueo real — sin él no hay producto WhatsApp, y sin producto no hay Phone Number ID propio ni token.
+
+### El callejón sin salida del asistente estándar ⚠️
+
+Desde **developers.facebook.com → Crear aplicación**, el paso "Empresa" muestra *"No hay empresas disponibles"* y **deshabilita el botón Siguiente**, aunque el usuario tenga **Acceso total** sobre el portafolio. No es un problema de permisos: el asistente simplemente no lista los portafolios.
+
+**La vuelta:** crear la app **desde adentro del portafolio**, en business.facebook.com → Configuración del negocio → **Aplicaciones → Añadir → Crear un identificador de la aplicación**. Eso abre el mismo asistente pero con `?business_id=...` en la URL, y ahí Siguiente sí se habilita.
+
+### Los tres caminos que fallaron
+
+Los tres devuelven el mismo error genérico de Meta (*"Lo sentimos. Se ha producido un error"* / *"Se ha producido un problema técnico inesperado"*):
+
+1. Crear la app desde el portafolio → pide reingresar la contraseña → error. **La app igual se creó**, pero sin vínculo.
+2. Configuración del negocio → Aplicaciones → Añadir → **Conectar un identificador de la aplicación** → pegar `2636276260158140` → error.
+3. Panel de la app → Configuración → Información básica → **Porfolio empresarial → Portfolio comercial** → elegir "Los Gladiolos Alojamiento" → Connect → error.
+
+> El camino 3 es el único donde **los dos portafolios sí aparecen listados**. Es el mejor punto para reintentar.
+
+### Hipótesis principal: falta la autenticación en dos pasos
+
+La pantalla de **Personas** del portafolio marca en rojo, bajo el usuario Fernando Pittavino: *"La autenticación en dos pasos no está activada"*.
+
+Meta exige 2FA a los usuarios con control total para acciones sensibles sobre un portafolio, y reclamar o conectar una app es una de ellas. También explicaría por qué el 7/8 no se pudo crear el usuario del sistema.
+
+**Acción pendiente del dueño:** activarla en facebook.com/settings?tab=security → Autenticación en dos pasos. Después reintentar por el camino 3.
+
+> **No reintentar en loop.** Esta cuenta ya escaló a restricciones por reintentos el 7/8.
+
+### Cuando se destrabe, en este orden
+
+1. Vincular la app `2636276260158140` al portafolio.
+2. Agregarle el producto **WhatsApp** (recién ahí aparece en el panel).
 3. Crear el usuario del sistema, asignarle la app **y** la WABA.
 4. Generar el token permanente.
 
@@ -281,9 +317,14 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 - [x] ~~Verificación del negocio~~ — **Meta no la exige** para este portafolio
 - [x] Datos bancarios editables desde `/admin/configuracion` (falta que el dueño cargue el valor)
 
-### 🚧 Bloqueado hasta que se levante el límite antispam
-- [ ] Terminar el registro de desarrollador (código por SMS)
-- [ ] Crear la app + producto WhatsApp + vincularla al portafolio
+- [x] ~~Límite antispam de la cuenta~~ — se levantó el 9/8
+- [x] ~~Registro de desarrollador~~ — completado el 9/8
+- [x] App creada: **Los Gladiolos Reservas**, `2636276260158140`
+
+### 🚧 Bloqueado: la app no se vincula al portafolio
+- [ ] **Activar la autenticación en dos pasos** del usuario ← acción del dueño, hipótesis principal
+- [ ] Vincular `2636276260158140` al portafolio "Los Gladiolos Alojamiento"
+- [ ] Agregar el producto WhatsApp a la app
 
 ### Etapa 1 — Completar el sistema con el número de prueba
 

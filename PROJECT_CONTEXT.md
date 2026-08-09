@@ -8,17 +8,23 @@
 
 ---
 
-## ⏸️ Dónde retomar — última sesión: 2026-08-07
+## ⏸️ Dónde retomar — última sesión: 2026-08-09
 
 **El sistema está completo y funcionando. Falta solamente WhatsApp.**
 
-### Lo próximo, apenas se pueda
+### Avances del 9/8
 
-**Terminar el registro de desarrollador de Meta**, que quedó a mitad de camino en el paso "Verify account" esperando un código por SMS.
+El límite antispam se levantó, el **registro de desarrollador quedó completo** y se **creó la app**: *Los Gladiolos Reservas*, identificador `2636276260158140`.
 
-🚧 **Está bloqueado por el límite antispam de la cuenta de Facebook.** Meta no manda ningún código mientras dure — es lo que explica que nunca llegaran ni el de WhatsApp ni el del SMS. **No reintentar**: cada intento lo extiende. Esperar a que se levante (horas, hasta 24 hs desde la tarde del 7/8).
+### Lo próximo
 
-Cuando se libere, la secuencia completa está en `WHATSAPP.md`: registro → crear la app con el producto WhatsApp → vincularla al portafolio → usuario del sistema con la app **y** la WABA asignadas → token permanente.
+🚧 **La app no se deja vincular al portafolio empresarial.** Los tres caminos posibles devuelven el mismo error genérico de Meta, y sin ese vínculo **el producto WhatsApp ni siquiera aparece** en el panel de la app.
+
+**Hipótesis principal: falta activar la autenticación en dos pasos** del usuario Fernando Pittavino — la pantalla de Personas del portafolio lo marca en rojo, y Meta la exige para acciones sensibles sobre un portafolio. Es una acción del dueño, en facebook.com/settings?tab=security.
+
+Después de activarla, reintentar desde el panel de la app → Configuración → Información básica → Porfolio empresarial. El detalle completo, los tres caminos probados y el callejón sin salida del asistente estándar están en `WHATSAPP.md`.
+
+Cuando se destrabe sigue: producto WhatsApp → usuario del sistema con la app **y** la WABA asignadas → token permanente.
 
 ### Pendientes sueltos del 7/8
 
