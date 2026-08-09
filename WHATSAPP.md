@@ -291,9 +291,32 @@ Ahora hay dos: la de prueba (`1815277973155566`) y la real (`403489972840929`). 
 - **Idioma: Spanish** (`es`, el genérico — no `Spanish (ARG)`). Es el valor que hay que pasarle a `enviarPlantilla`.
 - **Tipo de variable: Número**, que es el `{{1}}`, `{{2}}` posicional que espera `lib/whatsapp.ts`.
 
-> 🐛 **El editor de Meta autocompleta las llaves.** Al tipear `{{1}}` queda `{{1}}1}}` y la plantilla sale mal. Hay que insertar las variables con el botón **+ Añadir variable**, o pegar el cuerpo entero desde el portapapeles en vez de tipearlo.
-
 Meta exige además una **muestra** para cada variable. Son solo para la revisión, no se envían.
+
+### 🐛 Las tres trampas del formulario
+
+Costó bastante darles con la vuelta. Están en orden de aparición:
+
+1. **El editor autocompleta las llaves.** Al tipear `{{1}}` queda `{{1}}1}}`. Hay que insertar las variables con **+ Añadir variable**, o pegar el cuerpo entero desde el portapapeles.
+2. **Hay que scrollear arriba antes de cargar el nombre.** Después de pasar de la pantalla de categoría, la página queda scrolleada hacia el contenido y los campos de nombre e idioma quedan fuera de la vista. Es fácil escribir "al vacío" sin darse cuenta.
+3. **El primer intento después de cambiar de pantalla no toma.** El formulario tarda en montarse: el nombre y el idioma hay que cargarlos, verificar que quedaron, y volver a cargarlos si no. El encabezado de la tarjeta (`nombre • Spanish`) es el indicador confiable.
+
+**Verificar siempre antes de enviar a revisión**: nombre cargado, encabezado diciendo `• Spanish`, cuerpo completo y las muestras llenas. Si algo quedó vacío, el botón "Enviar a revisión" igual puede aparecer habilitado.
+
+> Con la sesión larga, el formulario se degrada: llega un punto en que deja de aceptar cualquier entrada aunque los clics no den error. **Recargar la página lo arregla.** Conviene hacerlo cada 3 o 4 plantillas.
+
+### Estado: 4 de 8 creadas (9/8)
+
+En revisión, todas en la **WABA de prueba**, categoría Servicio, idioma Spanish (`es`):
+
+- [x] `nueva_reserva_admin`
+- [x] `reserva_aprobada`
+- [x] `reserva_rechazada`
+- [x] `viajante_confirmado`
+- [ ] `reserva_cancelada_sin_senia`
+- [ ] `reserva_cancelada_admin`
+- [ ] `reserva_cancelada_admin_motivo`
+- [ ] `recordatorio_pendientes`
 
 ### Las 8 plantillas
 
@@ -442,7 +465,7 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 **En Meta:**
 - [ ] A.5: agregar el celular del dueño a la lista de destinatarios de prueba
-- [ ] Las **8 plantillas** creadas y aprobadas **en la WABA de prueba** (textos exactos en la Parte C)
+- [ ] Las **8 plantillas** creadas y aprobadas **en la WABA de prueba** (textos exactos en la Parte C) — **4 ya enviadas a revisión el 9/8**
 
 **De código:**
 - [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos ← solo después de que las plantillas estén aprobadas
