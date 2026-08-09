@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizarTelefono } from "@/lib/telefono";
 
 const API_VERSION = "v25.0";
 
@@ -13,9 +14,14 @@ export function whatsappConfigurado(): boolean {
   return getConfig() !== null;
 }
 
-/** Deja el numero como lo espera Meta: solo digitos, con codigo de pais. */
-function normalizarNumero(numero: string): string {
-  return numero.replace(/\D/g, "");
+/**
+ * Ultima red de seguridad antes de llamar a Meta. Los numeros ya vienen
+ * normalizados desde el formulario, pero los que se cargaron antes de esa
+ * validacion —o WHATSAPP_ADMIN_PHONE, que se edita a mano en Vercel— pueden
+ * estar mal. Preferimos un log explicito antes que un envio que falla solo.
+ */
+function normalizarNumero(numero: string): string | null {
+  return normalizarTelefono(numero);
 }
 
 async function enviar(payload: Record<string, unknown>, destino: string) {
@@ -57,6 +63,10 @@ async function enviar(payload: Record<string, unknown>, destino: string) {
  */
 export async function enviarTexto(numero: string, texto: string): Promise<boolean> {
   const to = normalizarNumero(numero);
+  if (!to) {
+    console.error(`[whatsapp] Numero invalido, no se envia: ${JSON.stringify(numero)}`);
+    return false;
+  }
   return enviar(
     {
       messaging_product: "whatsapp",
@@ -81,6 +91,10 @@ export async function enviarPlantilla(
   parametros: string[] = []
 ): Promise<boolean> {
   const to = normalizarNumero(numero);
+  if (!to) {
+    console.error(`[whatsapp] Numero invalido, no se envia: ${JSON.stringify(numero)}`);
+    return false;
+  }
   const components = parametros.length
     ? [
         {

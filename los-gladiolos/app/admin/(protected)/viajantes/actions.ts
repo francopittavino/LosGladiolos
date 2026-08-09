@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { haySesionAdminValida } from "@/lib/adminAuth";
+import { normalizarTelefono } from "@/lib/telefono";
 
 export type GuardarViajanteState = { error: string | null } | undefined;
 
@@ -25,6 +26,16 @@ export async function guardarViajante(
   if (!numeroDni || !nombre || !telefono) {
     return { error: "Nombre, telefono y DNI son obligatorios." };
   }
+
+  // El viajante hereda este telefono en cada reserva, asi que tambien tiene
+  // que quedar guardado en el formato que espera WhatsApp.
+  const telefonoNormalizado = normalizarTelefono(telefono);
+  if (!telefonoNormalizado) {
+    return {
+      error:
+        "No se pudo interpretar el telefono. Escribilo con la caracteristica, por ejemplo 343 451-2995.",
+    };
+  }
   if (!cantPersonasHabitual || cantPersonasHabitual < 1 || cantPersonasHabitual > 5) {
     return { error: "La cantidad de personas habitual debe ser entre 1 y 5." };
   }
@@ -33,7 +44,7 @@ export async function guardarViajante(
     where: { numeroDni },
     update: {
       nombre,
-      telefono,
+      telefono: telefonoNormalizado,
       cantPersonasHabitual,
       dominioVehiculo: dominioVehiculo || null,
       fotoDni: fotoDni || undefined,
@@ -42,7 +53,7 @@ export async function guardarViajante(
     create: {
       numeroDni,
       nombre,
-      telefono,
+      telefono: telefonoNormalizado,
       cantPersonasHabitual,
       dominioVehiculo: dominioVehiculo || null,
       fotoDni: fotoDni || null,

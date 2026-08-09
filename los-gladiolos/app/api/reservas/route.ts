@@ -8,6 +8,7 @@ import {
   validarRangoFechas,
 } from "@/lib/reservas";
 import { normalizarCamas } from "@/lib/camas";
+import { normalizarTelefono } from "@/lib/telefono";
 import { notificarNuevaReservaAlAdmin } from "@/lib/notificaciones";
 
 type PersonaInput = {
@@ -45,6 +46,19 @@ export async function POST(request: Request) {
 
   if (!nombreSolicitante?.trim() || !telefono?.trim()) {
     return NextResponse.json({ error: "Falta el nombre o telefono de contacto." }, { status: 400 });
+  }
+
+  // Se guarda normalizado: es el numero al que despues le llegan todos los
+  // avisos, asi que no puede quedar en el formato suelto que escribio el huesped.
+  const telefonoNormalizado = normalizarTelefono(telefono);
+  if (!telefonoNormalizado) {
+    return NextResponse.json(
+      {
+        error:
+          "No pudimos interpretar el telefono. Escribilo con la caracteristica, por ejemplo 343 451-2995.",
+      },
+      { status: 400 }
+    );
   }
 
   if (!aceptoReglas) {
@@ -116,7 +130,7 @@ export async function POST(request: Request) {
   const reserva = await prisma.reserva.create({
     data: {
       nombreSolicitante: nombreSolicitante.trim(),
-      telefono: telefono.trim(),
+      telefono: telefonoNormalizado,
       fechaInicio: inicio,
       fechaFin: fin,
       cantPersonas,

@@ -7,6 +7,7 @@ import {
   minimoCamasSimples,
   normalizarCamas,
 } from "@/lib/camas";
+import { formatTelefono, normalizarTelefono } from "@/lib/telefono";
 import { ReglasModal } from "./ReglasModal";
 
 type PersonaForm = {
@@ -213,9 +214,14 @@ export function HuespedGeneralForm() {
   const personasCompletas = personas.every(
     (p) => p.numeroDni.trim() && p.fotoDniFrente && p.fotoDniDorso
   );
+  // Todos los avisos de la reserva van a este numero, asi que se valida acá
+  // mismo: si esta mal, el huesped no se entera de nada y no hay como avisarle.
+  const telefonoNormalizado = normalizarTelefono(telefono);
+  const telefonoInvalido = telefono.trim().length > 0 && !telefonoNormalizado;
+
   const puedeEnviar =
     nombreSolicitante.trim() &&
-    telefono.trim() &&
+    telefonoNormalizado &&
     disponibilidad.estado === "ok" &&
     personasCompletas &&
     aceptoReglas &&
@@ -230,7 +236,7 @@ export function HuespedGeneralForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombreSolicitante,
-          telefono,
+          telefono: telefonoNormalizado,
           fechaInicio,
           fechaFin,
           cantPersonas,
@@ -285,11 +291,28 @@ export function HuespedGeneralForm() {
         <div>
           <label className="block text-sm font-medium text-carbon">Telefono de contacto</label>
           <input
-            className="mt-1 w-full rounded-lg border border-carbon/20 px-3 py-2"
+            className={`mt-1 w-full rounded-lg border px-3 py-2 ${
+              telefonoInvalido ? "border-red-500" : "border-carbon/20"
+            }`}
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
-            placeholder="+54 9 ..."
+            placeholder="343 451-2995"
+            inputMode="tel"
           />
+          {telefonoInvalido ? (
+            <p className="mt-1 text-sm text-red-600">
+              No pudimos interpretar el numero. Escribilo con la caracteristica, por ejemplo 343
+              451-2995.
+            </p>
+          ) : telefonoNormalizado ? (
+            <p className="mt-1 text-sm text-carbon/60">
+              Te vamos a escribir por WhatsApp a {formatTelefono(telefonoNormalizado)}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-carbon/60">
+              Con la caracteristica, sin el 0 ni el 15. Te escribimos por WhatsApp a este numero.
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-carbon">Fecha de entrada</label>

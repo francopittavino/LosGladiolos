@@ -51,6 +51,23 @@ Esto aplica solo a la migración final: el número de prueba de Meta no lo neces
 
 ---
 
+## El formato del teléfono del huésped
+
+**Resuelto el 2026-08-09.** Era un agujero silencioso: el campo de teléfono del formulario era texto libre y `lib/whatsapp.ts` solo borraba lo que no fuera dígito. Si el huésped escribía `343 451-2995` o `0343 15 451-2995` —o sea, como se usa el teléfono todos los días— el número quedaba sin código de país y **el aviso no llegaba nunca**, sin que nadie se enterara: el error queda en los logs de Vercel y la reserva sigue su curso normal.
+
+Ahora `lib/telefono.ts` normaliza a lo que espera Meta (`549` + característica sin el 0 + número sin el 15) y se aplica en cuatro lugares:
+
+| Dónde | Qué hace |
+|---|---|
+| `components/reserva/HuespedGeneralForm.tsx` | Valida mientras se escribe, muestra a qué número se va a escribir y no deja enviar si no se entiende |
+| `app/api/reservas/route.ts` | Guarda el teléfono ya normalizado; rechaza con 400 si no se puede interpretar |
+| `app/admin/(protected)/viajantes/actions.ts` | Ídem para el viajante frecuente, que hereda su teléfono a cada reserva |
+| `lib/whatsapp.ts` | Última red: si el número no se puede normalizar, loguea y **no** envía |
+
+Un número extranjero escrito con `+` se respeta tal cual. Los que no se pueden interpretar (sin característica, por ejemplo `15 451-2995`) se rechazan en el formulario, que es el único momento en que se le puede pedir al huésped que lo corrija.
+
+---
+
 ## Limitaciones del número de prueba
 
 - Solo se le puede escribir a **hasta 5 destinatarios pre-registrados** (paso A.5). Alcanza para probar el circuito completo con el celular del dueño, pero **no se puede probar con un huésped real** hasta migrar.
