@@ -305,18 +305,39 @@ Costó bastante darles con la vuelta. Están en orden de aparición:
 
 > Con la sesión larga, el formulario se degrada: llega un punto en que deja de aceptar cualquier entrada aunque los clics no den error. **Recargar la página lo arregla.** Conviene hacerlo cada 3 o 4 plantillas.
 
-### Estado: 4 de 8 creadas (9/8)
+### ⚠️ La causa de la mitad de los problemas: la pestaña en segundo plano
 
-En revisión, todas en la **WABA de prueba**, categoría Servicio, idioma Spanish (`es`):
+Durante la creación, el formulario "dejó de funcionar" varias veces: los clics respondían pero **nada de lo tipeado llegaba**, sin ningún error. Recargar la página, abrir pestañas nuevas y cerrar las demás no lo arreglaba.
 
-- [x] `nueva_reserva_admin`
-- [x] `reserva_aprobada`
-- [x] `reserva_rechazada`
-- [x] `viajante_confirmado`
-- [ ] `reserva_cancelada_sin_senia`
-- [ ] `reserva_cancelada_admin`
-- [ ] `reserva_cancelada_admin_motivo`
-- [ ] `recordatorio_pendientes`
+La causa: la pestaña estaba en **segundo plano** (`document.visibilityState === 'hidden'`). Chrome no entrega pulsaciones de teclado sintetizadas a una pestaña que no está visible, pero **sí** enruta los clics. De ahí el síntoma engañoso.
+
+**Si esto se automatiza de nuevo, la ventana de Chrome tiene que estar al frente y visible.** Para diagnosticar rápido, en la consola: `document.visibilityState`.
+
+### Estado: las 8 creadas (9/8)
+
+Todas en la **WABA de prueba**, idioma Spanish (`es`), en revisión:
+
+| Plantilla | Categoría |
+|---|---|
+| `nueva_reserva_admin` | Servicio |
+| `reserva_aprobada` | Servicio |
+| `reserva_rechazada` | Servicio |
+| `viajante_confirmado` | Servicio |
+| `reserva_cancelada_sin_senia` | Servicio |
+| `reserva_cancelada_admin` | Servicio |
+| **`reserva_cancelada_admin_motivo`** | ⚠️ **Marketing** — mal, ver abajo |
+| `recordatorio_pendientes` | Servicio |
+
+#### 🔧 Pendiente: `reserva_cancelada_admin_motivo` quedó en Marketing
+
+Se creó con la categoría equivocada. **Importa**: los mensajes de Marketing son más caros y, sobre todo, **pueden no entregarse** a quien tenga desactivadas las notificaciones de marketing. Un aviso de cancelación no puede depender de eso.
+
+**La categoría no se puede editar** en una plantilla ya creada: los campos aparecen bloqueados. Y tampoco se puede borrar mientras está en revisión (*"Esta plantilla no se puede eliminar porque está en revisión"*).
+
+**Qué hacer cuando termine la revisión:**
+
+1. Mirar en qué categoría quedó. Meta recategoriza durante la revisión, y como el texto es claramente transaccional **es probable que la pase a Servicio sola**. Si es así, no hay nada que hacer.
+2. Si sigue en Marketing: borrarla y recrearla con categoría Servicio. **Ojo**: Meta no deja reutilizar el nombre de una plantilla borrada durante 30 días, así que hay que usar otro — por ejemplo `reserva_cancelada_con_motivo` — y ajustar el nombre en `lib/notificaciones.ts`.
 
 ### Las 8 plantillas
 
@@ -452,20 +473,19 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 ### Etapa 1 — Completar el sistema con el número de prueba
 
-**En Vercel ← lo próximo**
-- [ ] `WHATSAPP_ACCESS_TOKEN` = el token permanente
-- [ ] `WHATSAPP_PHONE_NUMBER_ID` = `1251498061386053` (**reemplaza** el que está cargado)
-- [ ] `WHATSAPP_ADMIN_PHONE` = `5493434512995`
-- [ ] Redeploy
+**En Vercel**
+- [x] ~~Las tres variables cargadas~~ — hecho el 9/8
 - [ ] Verificar con el `GET` de A.6 que el token y el Phone Number ID son correctos
 
 **Del dueño / de negocio:**
-- [ ] **Datos bancarios** para la seña ← bloquea la plantilla `reserva_aprobada`
+- [ ] **Datos bancarios** para la seña ← sin esto, `reserva_aprobada` manda el texto neutro
 - [ ] Aceptar el mensaje de verificación como destinatario de prueba (A.5)
 
 **En Meta:**
 - [ ] A.5: agregar el celular del dueño a la lista de destinatarios de prueba
-- [ ] Las **8 plantillas** creadas y aprobadas **en la WABA de prueba** (textos exactos en la Parte C) — **4 ya enviadas a revisión el 9/8**
+- [x] ~~Las 8 plantillas creadas~~ — enviadas a revisión el 9/8
+- [ ] Que las 8 queden **aprobadas**
+- [ ] Resolver la categoría de `reserva_cancelada_admin_motivo` (ver Parte C)
 
 **De código:**
 - [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos ← solo después de que las plantillas estén aprobadas

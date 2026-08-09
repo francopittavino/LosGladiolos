@@ -25,15 +25,16 @@ Se completó el registro de desarrollador, se creó la app, se aplicó el caso d
 
 **Lo que destrabó todo fue activar la autenticación en dos pasos** del usuario administrador. Meta la exige para acciones sensibles sobre un portafolio y, en vez de decirlo, fallaba con un error genérico. El detalle está en `WHATSAPP.md`.
 
+Las tres variables ya están cargadas en Vercel y **las 8 plantillas están creadas y en revisión** en la WABA de prueba.
+
 ### Lo próximo
 
-**Cargar las tres variables en Vercel y redeployar.** El token es *sensitive* y solo lo tiene el dueño, así que las pega él:
-
-- `WHATSAPP_ACCESS_TOKEN` = el token permanente
-- `WHATSAPP_PHONE_NUMBER_ID` = `1251498061386053` ← **reemplaza** el valor actual, que apunta al número real y todavía no sirve para probar
-- `WHATSAPP_ADMIN_PHONE` = `5493434512995`
-
-Después: agregar el celular del dueño como destinatario de prueba, crear las 6 plantillas, cambiar `enviarTexto()` por `enviarPlantilla()` y probar el flujo completo. Todo detallado en `WHATSAPP.md`.
+1. **Esperar la aprobación de las 8 plantillas** (de minutos a horas).
+2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Servicio. Puede que Meta la recategorice sola durante la revisión; si no, hay que borrarla y rehacerla con otro nombre. El detalle está en `WHATSAPP.md`.
+3. **Agregar el celular del dueño** como destinatario de prueba (paso A.5): el número de prueba solo escribe a 5 números autorizados.
+4. **Cambiar `enviarTexto()` por `enviarPlantilla()`** en los siete avisos de `lib/notificaciones.ts` — recién cuando las plantillas estén aprobadas, si no todo falla con `(#132001)`.
+5. **Cargar los datos bancarios** en `/admin/configuracion`.
+6. Probar el flujo completo de punta a punta.
 
 ### Pendientes sueltos del 7/8
 
