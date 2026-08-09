@@ -12,19 +12,28 @@
 
 **El sistema está completo y funcionando. Falta solamente WhatsApp.**
 
-### Avances del 9/8
+### Avances del 9/8 — toda la configuración de Meta quedó lista
 
-El límite antispam se levantó, el **registro de desarrollador quedó completo** y se **creó la app**: *Los Gladiolos Reservas*, identificador `2636276260158140`.
+Se completó el registro de desarrollador, se creó la app, se aplicó el caso de uso de WhatsApp, se creó el usuario del sistema con los activos asignados y **se generó el token permanente**, que el dueño guardó en su gestor de contraseñas.
+
+| Qué | Valor |
+|---|---|
+| Aplicación | *Los Gladiolos Reservas* — `1379636740973960` |
+| Usuario del sistema | `reservas-bot` — `61592879320056` |
+| Número de prueba | +1 (555) 197-7380 |
+| **Phone Number ID de prueba** | `1251498061386053` |
+
+**Lo que destrabó todo fue activar la autenticación en dos pasos** del usuario administrador. Meta la exige para acciones sensibles sobre un portafolio y, en vez de decirlo, fallaba con un error genérico. El detalle está en `WHATSAPP.md`.
 
 ### Lo próximo
 
-🚧 **La app no se deja vincular al portafolio empresarial.** Los tres caminos posibles devuelven el mismo error genérico de Meta, y sin ese vínculo **el producto WhatsApp ni siquiera aparece** en el panel de la app.
+**Cargar las tres variables en Vercel y redeployar.** El token es *sensitive* y solo lo tiene el dueño, así que las pega él:
 
-**Hipótesis principal: falta activar la autenticación en dos pasos** del usuario Fernando Pittavino — la pantalla de Personas del portafolio lo marca en rojo, y Meta la exige para acciones sensibles sobre un portafolio. Es una acción del dueño, en facebook.com/settings?tab=security.
+- `WHATSAPP_ACCESS_TOKEN` = el token permanente
+- `WHATSAPP_PHONE_NUMBER_ID` = `1251498061386053` ← **reemplaza** el valor actual, que apunta al número real y todavía no sirve para probar
+- `WHATSAPP_ADMIN_PHONE` = `5493434512995`
 
-Después de activarla, reintentar desde el panel de la app → Configuración → Información básica → Porfolio empresarial. El detalle completo, los tres caminos probados y el callejón sin salida del asistente estándar están en `WHATSAPP.md`.
-
-Cuando se destrabe sigue: producto WhatsApp → usuario del sistema con la app **y** la WABA asignadas → token permanente.
+Después: agregar el celular del dueño como destinatario de prueba, crear las 6 plantillas, cambiar `enviarTexto()` por `enviarPlantilla()` y probar el flujo completo. Todo detallado en `WHATSAPP.md`.
 
 ### Pendientes sueltos del 7/8
 

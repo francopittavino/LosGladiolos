@@ -33,15 +33,13 @@ Antes de cambiar el calendario hay que **compartir el calendario real con `reser
 
 ---
 
-## 🔴 Empezar YA, aunque el resto vaya con recursos de prueba
+## Lo que hay que tener en cuenta para la migración
 
-### La verificación del negocio en Meta
+### La verificación del negocio en Meta — ✅ no hace falta
 
-Para conectar un **número propio** a la Cloud API, Meta exige que el negocio esté verificado. Piden documentación de la empresa y **el trámite tarda días**.
+Se había marcado como el trámite urgente, porque para conectar un número propio a la Cloud API Meta suele exigir el negocio verificado y el trámite tarda días.
 
-Con el número de prueba no hace falta, así que es fácil que esto quede escondido hasta el día de la migración — y ahí frena todo una semana.
-
-**Es lo único de la lista que no depende de nosotros y no se puede apurar. Conviene arrancarlo ahora, en paralelo.**
+**No aplica a este portafolio.** El Centro de seguridad dice textualmente: *"Tu organización no tiene que completar la verificación"*. Puede volver a pedirla más adelante, para límites de envío más altos.
 
 business.facebook.com → Configuración del negocio → **Centro de seguridad** → Verificación del negocio.
 
@@ -61,7 +59,9 @@ Esto aplica solo a la migración final: el número de prueba de Meta no lo neces
 
 ---
 
-## Estado real de la cuenta de Meta (relevado el 2026-08-07)
+## Estado de la cuenta de Meta (relevado el 2026-08-07)
+
+> ⚠️ **Parcialmente superado por el avance del 9/8.** Sigue valiendo lo del portafolio, la WABA real, el número real y la verificación del negocio. Las dos últimas filas y la consecuencia 1 **ya no aplican**: ver la sección de arriba.
 
 Se recorrió la cuenta entera. Esto es lo que hay, y difiere bastante de lo que se suponía:
 
@@ -92,60 +92,61 @@ Durante el 7/8 la cuenta estuvo con el límite antispam de Facebook activo, que 
 
 ---
 
-## 🚧 Bloqueo activo: la app no se deja vincular al portafolio
+## ✅ Toda la Parte A quedó hecha (2026-08-09)
 
-**Estado al 2026-08-09.**
-
-La app de desarrollador **existe**:
+App creada y vinculada, producto WhatsApp activo, usuario del sistema con los activos asignados y **token permanente generado**. Estos son los identificadores reales del sistema:
 
 | Qué | Valor |
 |---|---|
-| Nombre | **Los Gladiolos Reservas** |
-| Identificador de la aplicación | **`2636276260158140`** |
-| Modo | En desarrollo |
-| Tipo | Ninguno |
-| Correo de contacto | `alemaraccesorios@yahoo.com.ar` (el de la cuenta de Facebook; se puede cambiar en Configuración → Información básica) |
+| Aplicación | **Los Gladiolos Reservas** — `1379636740973960` |
+| Modo de la app | En desarrollo |
+| Correo de contacto de la app | `alemaraccesorios@yahoo.com.ar` (el de la cuenta de Facebook; editable en Configuración → Información básica) |
+| Usuario del sistema | **`reservas-bot`** — `61592879320056`, rol Admin |
+| Token permanente | Generado con caducidad **Nunca** y los permisos `whatsapp_business_management` + `whatsapp_business_messaging`. Guardado en el gestor de contraseñas del dueño |
+| Número de prueba | **+1 (555) 197-7380** |
+| **Phone Number ID de prueba** | **`1251498061386053`** |
+| WABA de prueba | `1815277973155566` ("Test WhatsApp Business Account") |
+| WABA real | `403489972840929` ("Los Gladiolos Alojamiento") |
+| Phone Number ID real | `407269815803738` |
 
-Pero quedó **a medio crear**: el asistente falló justo al confirmar, así que la app **no está vinculada al portafolio** y **no tiene aplicado el caso de uso de WhatsApp**.
+**El token alcanza las dos WABAs.** Al usuario del sistema se le asignaron con Acceso total la app y **ambas** cuentas de WhatsApp, la de prueba y la real. Por eso el día de la migración **no hay que regenerar el token**: alcanza con cambiar el `WHATSAPP_PHONE_NUMBER_ID`.
 
-**La consecuencia concreta: WhatsApp no figura entre los productos disponibles del panel de la app.** El producto aparece recién cuando la app pertenece a un portafolio empresarial. Por eso el vínculo con el portafolio es el bloqueo real — sin él no hay producto WhatsApp, y sin producto no hay Phone Number ID propio ni token.
+### ⚠️ Corrección importante: el número de prueba sí existe
 
-### El callejón sin salida del asistente estándar ⚠️
+Este documento afirmaba que "no existe un número de prueba de Meta". **Era una conclusión incorrecta**, derivada de que en ese momento no había ninguna app creada. El número de prueba viene con el caso de uso de WhatsApp de la app, y ahora está disponible.
 
-Desde **developers.facebook.com → Crear aplicación**, el paso "Empresa" muestra *"No hay empresas disponibles"* y **deshabilita el botón Siguiente**, aunque el usuario tenga **Acceso total** sobre el portafolio. No es un problema de permisos: el asistente simplemente no lista los portafolios.
+Esto **rehabilita la estrategia original**: completar y validar el sistema entero con recursos de prueba, y migrar al número real al final.
 
-**La vuelta:** crear la app **desde adentro del portafolio**, en business.facebook.com → Configuración del negocio → **Aplicaciones → Añadir → Crear un identificador de la aplicación**. Eso abre el mismo asistente pero con `?business_id=...` en la URL, y ahí Siguiente sí se habilita.
+---
 
-### Los tres caminos que fallaron
+## 🔑 Lo que realmente destrabó todo: la autenticación en dos pasos
 
-Los tres devuelven el mismo error genérico de Meta (*"Lo sentimos. Se ha producido un error"* / *"Se ha producido un problema técnico inesperado"*):
+Vale la pena dejarlo escrito porque costó horas y el síntoma no tiene nada que ver con la causa.
 
-1. Crear la app desde el portafolio → pide reingresar la contraseña → error. **La app igual se creó**, pero sin vínculo.
-2. Configuración del negocio → Aplicaciones → Añadir → **Conectar un identificador de la aplicación** → pegar `2636276260158140` → error.
-3. Panel de la app → Configuración → Información básica → **Porfolio empresarial → Portfolio comercial** → elegir "Los Gladiolos Alojamiento" → Connect → error.
+**Síntoma.** Cualquier intento de vincular una app al portafolio devolvía el error genérico de Meta (*"Lo sentimos. Se ha producido un error"* / *"Se ha producido un problema técnico inesperado"*), por los tres caminos posibles. Además, el asistente de creación mostraba *"No hay empresas disponibles"* y deshabilitaba el botón Siguiente.
 
-> El camino 3 es el único donde **los dos portafolios sí aparecen listados**. Es el mejor punto para reintentar.
+**Causa.** El usuario administrador **no tenía activada la autenticación en dos pasos**. Meta la exige para las acciones sensibles sobre un portafolio y, en vez de decirlo, falla con un error genérico. La única pista estaba en la pantalla **Personas** del portafolio, en rojo bajo el nombre del usuario: *"La autenticación en dos pasos no está activada"*.
 
-### Hipótesis principal: falta la autenticación en dos pasos
+**Efecto de activarla.** Inmediato y total: el asistente pasó a listar los portafolios con "Los Gladiolos Alojamiento" preseleccionado, la vinculación funcionó de una, y la pantalla de **Usuarios del sistema** —que antes rechazaba la creación con *"una aplicación debe formar parte de este porfolio"*— pasó a funcionar normalmente.
 
-La pantalla de **Personas** del portafolio marca en rojo, bajo el usuario Fernando Pittavino: *"La autenticación en dos pasos no está activada"*.
+> Al activar la 2FA, Meta **cierra la sesión**. Hay que volver a entrar antes de seguir.
 
-Meta exige 2FA a los usuarios con control total para acciones sensibles sobre un portafolio, y reclamar o conectar una app es una de ellas. También explicaría por qué el 7/8 no se pudo crear el usuario del sistema.
+### Dos trampas más del camino, por si hay que rehacerlo
 
-**Acción pendiente del dueño:** activarla en facebook.com/settings?tab=security → Autenticación en dos pasos. Después reintentar por el camino 3.
+**El asistente estándar de creación es un callejón sin salida.** Desde developers.facebook.com → Crear aplicación, el paso "Empresa" no lista ningún portafolio. Hay que entrar desde **business.facebook.com → Configuración del negocio → Aplicaciones → Añadir → Crear un identificador de la aplicación**, que abre el mismo asistente con `?business_id=...` en la URL.
 
-> **No reintentar en loop.** Esta cuenta ya escaló a restricciones por reintentos el 7/8.
+**El caso de uso solo se define al crear la app.** Si el asistente se corta antes de terminar, la app queda con *Tipo: Ninguno* y **no hay ninguna opción en la interfaz para asignarle un caso de uso después**. WhatsApp nunca va a aparecer entre sus productos. La única salida es suprimir la app y rehacerla. Así se perdió la primera app (`2636276260158140`, ya eliminada).
 
-### Cuando se destrabe, en este orden
+### Acuerdos que hubo que aceptar
 
-1. Vincular la app `2636276260158140` al portafolio.
-2. Agregarle el producto **WhatsApp** (recién ahí aparece en el panel).
-3. Crear el usuario del sistema, asignarle la app **y** la WABA.
-4. Generar el token permanente.
+- **Condiciones de Facebook para WhatsApp Business** y **Condiciones de alojamiento de Meta para la API en la nube** — en la pantalla del caso de uso.
+- **Política de no discriminación de Facebook** — la pide al crear el primer usuario del sistema.
 
 ---
 
 ## Parte A — Lo que hay que hacer en Meta
+
+> ✅ **A.1 a A.4 están hechos** (9/8). Se dejan como referencia del procedimiento, con las notas de lo que en la práctica resultó distinto. **A.5 sigue pendiente**: es lo único de esta parte que falta.
 
 ### A.1 Crear el usuario del sistema
 
@@ -166,6 +167,12 @@ Con el usuario del sistema seleccionado → **Agregar activos**:
 
 Hay que asignar **las dos cosas**, no solo la app.
 
+> **Lo que se hizo el 9/8:** se asignaron la app y **las dos WABAs** (la de prueba y la real) con Acceso total, para que el mismo token siga sirviendo después de migrar.
+>
+> Dos detalles de la pantalla real:
+> - Hay **dos entradas llamadas "Cuentas de WhatsApp"** en la lista de tipos de activo. Una son las WABAs; la otra son los números sueltos (ahí figura `5493434512995`). **Asignar el número no hace falta**: los permisos bajan desde la WABA que lo contiene. De hecho quedó sin asignar y el token funciona igual.
+> - Dentro de "Acceso total" hay **dos toggles llamados "Todo"**. El primero (administrar configuración, asignar usuarios y enviar mensajes) es el que corresponde. El segundo permite además expulsar a otros administradores y suprimir la cuenta de WhatsApp: **no activarlo**, el bot no lo necesita.
+
 ### A.3 Generar el token permanente
 
 Con el usuario del sistema seleccionado → **Generar token nuevo**:
@@ -178,9 +185,9 @@ Copiar el token. **Se muestra una sola vez.** Guardarlo en el gestor de contrase
 
 ### A.4 Anotar el identificador del número
 
-**developers.facebook.com** → la app → **WhatsApp** → **Configuración de la API**.
+Con el Developer Center nuevo, la pantalla es: **developers.facebook.com** → la app → **Casos de uso** → *Conectar en WhatsApp* → **Paso 1. Probar**.
 
-Ahí figura el **Identificador del número de teléfono** (Phone number ID). Es un número largo.
+Ahí figura el **Phone Number ID**. Es un número largo. Para el número de prueba es **`1251498061386053`**.
 
 > Ojo: **no** es el "Identificador de la cuenta de WhatsApp Business" (WABA ID), que aparece justo al lado. Son cosas distintas y se confunden fácil. El que va en `WHATSAPP_PHONE_NUMBER_ID` es el del **número de teléfono**.
 
@@ -235,9 +242,11 @@ Proyecto → **Settings** → **Environment Variables**:
 
 | Variable | Valor | Tipo |
 |---|---|---|
-| `WHATSAPP_ACCESS_TOKEN` | el token permanente de A.3 | **Sensitive** |
-| `WHATSAPP_ADMIN_PHONE` | celular del dueño, **solo dígitos con código de país** | Sensitive |
-| `WHATSAPP_PHONE_NUMBER_ID` | el identificador de A.4 | ya está cargado — verificar que coincida |
+| `WHATSAPP_ACCESS_TOKEN` | el token permanente de A.3, guardado en el gestor de contraseñas | **Sensitive** |
+| `WHATSAPP_ADMIN_PHONE` | `5493434512995` | Sensitive |
+| `WHATSAPP_PHONE_NUMBER_ID` | **`1251498061386053`** (el de prueba) | ya hay uno cargado — **hay que reemplazarlo** |
+
+> ⚠️ **El `WHATSAPP_PHONE_NUMBER_ID` que está hoy en Vercel no sirve.** Apunta al número real (`407269815803738`) bajo la WABA vieja de Coexistence, que no es la que se usa para probar. Mientras se valide con recursos de prueba tiene que estar el **`1251498061386053`**. Se vuelve al real recién en la migración.
 
 Formato del teléfono: solo números, sin `+`, sin espacios ni guiones. Para un celular argentino sería `549` + característica sin el 0 + número sin el 15. Ejemplo: `5493435074866`.
 
@@ -319,41 +328,42 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 - [x] ~~Límite antispam de la cuenta~~ — se levantó el 9/8
 - [x] ~~Registro de desarrollador~~ — completado el 9/8
-- [x] App creada: **Los Gladiolos Reservas**, `2636276260158140`
-
-### 🚧 Bloqueado: la app no se vincula al portafolio
-- [ ] **Activar la autenticación en dos pasos** del usuario ← acción del dueño, hipótesis principal
-- [ ] Vincular `2636276260158140` al portafolio "Los Gladiolos Alojamiento"
-- [ ] Agregar el producto WhatsApp a la app
+- [x] ~~Autenticación en dos pasos~~ — activada el 9/8, **era la causa de todos los errores genéricos**
+- [x] App creada y vinculada al portafolio: **Los Gladiolos Reservas**, `1379636740973960`
+- [x] Caso de uso WhatsApp aplicado y número de prueba obtenido
+- [x] Usuario del sistema `reservas-bot` con la app y **las dos WABAs** asignadas
+- [x] Token permanente generado (caducidad Nunca) y guardado en el gestor de contraseñas
 
 ### Etapa 1 — Completar el sistema con el número de prueba
 
+**En Vercel ← lo próximo**
+- [ ] `WHATSAPP_ACCESS_TOKEN` = el token permanente
+- [ ] `WHATSAPP_PHONE_NUMBER_ID` = `1251498061386053` (**reemplaza** el que está cargado)
+- [ ] `WHATSAPP_ADMIN_PHONE` = `5493434512995`
+- [ ] Redeploy
+- [ ] Verificar con el `GET` de A.6 que el token y el Phone Number ID son correctos
+
 **Del dueño / de negocio:**
-- [ ] Celular del admin con código de país
 - [ ] **Datos bancarios** para la seña ← bloquea la plantilla `reserva_aprobada`
-- [ ] Aceptar el mensaje de verificación como destinatario de prueba
+- [ ] Aceptar el mensaje de verificación como destinatario de prueba (A.5)
 
 **En Meta:**
-- [ ] Usuario del sistema creado
-- [ ] App **y** cuenta de WhatsApp asignadas al usuario del sistema
-- [ ] Token permanente generado y guardado en el gestor de contraseñas
-- [ ] Identificador del número de prueba anotado
+- [ ] A.5: agregar el celular del dueño a la lista de destinatarios de prueba
 - [ ] Las 6 plantillas creadas y aprobadas
 
 **De código:**
-- [ ] Mover `DATOS_BANCARIOS` a `ConfiguracionGeneral` y agregarlo al panel
 - [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los seis avisos
 - [ ] Flujo completo probado de punta a punta
 
-**En Vercel:**
-- [ ] Las tres variables cargadas + redeploy
-
 ### Etapa 2 — Migración a los recursos reales
 
-- [ ] Verificación del negocio aprobada
 - [ ] Número real dado de alta con **Coexistence**
 - [ ] Calendario real compartido con `reservas@los-gladiolos.iam.gserviceaccount.com`
-- [ ] `WHATSAPP_PHONE_NUMBER_ID` → número real
+- [ ] `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738` (el real)
 - [ ] `GOOGLE_CALENDAR_ID` → calendario real
 - [ ] `NEXT_PUBLIC_BASE_URL` → dominio definitivo, si se usa uno propio
 - [ ] Redeploy y prueba con una reserva real
+
+> **El token no se toca en la migración.** Ya tiene acceso a la WABA real.
+>
+> La verificación del negocio salió de esta lista: Meta no la exige para este portafolio. Puede volver a pedirla para límites de envío más altos.
