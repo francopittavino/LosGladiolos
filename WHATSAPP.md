@@ -268,30 +268,123 @@ Acá está el punto que más trabajo va a dar, y conviene entenderlo antes de em
 
 **Meta solo permite mandar texto libre dentro de las 24 horas posteriores a que la persona te haya escrito.** Los huéspedes de Los Gladiolos nunca escriben primero: llenan un formulario web. Así que **todos los avisos automáticos caen fuera de esa ventana** y necesitan una plantilla aprobada.
 
-Hoy `lib/notificaciones.ts` usa `enviarTexto()` para los seis avisos. Sirve para probar (si el destinatario escribe primero al número de prueba, se abre la ventana), pero **no para producción**.
+Hoy `lib/notificaciones.ts` usa `enviarTexto()` para los **siete** avisos. Sirve para probar (si el destinatario escribe primero al número de prueba, se abre la ventana), pero **no para producción**.
 
 `lib/whatsapp.ts` ya tiene lista la función `enviarPlantilla(numero, nombrePlantilla, idioma, parametros)`. Lo que falta es crear las plantillas en Meta y cambiar las llamadas.
 
 > Crear plantillas y mandarlas a aprobar **no envía mensajes**: se puede hacer aunque la cuenta esté con el límite antispam activo.
 
-### Plantillas a crear
+### ⚠️ Las plantillas son por WABA, y hay dos
 
-En **business.facebook.com** → **Administrador de WhatsApp** → **Plantillas de mensajes** → **Crear plantilla**.
+`WHATSAPP.md` afirmaba que las plantillas *"se aprueban a nivel WABA, no a nivel número, así que las que se creen ahora siguen valiendo después"*. Eso valía cuando se suponía **una sola** WABA.
 
-Todas van con categoría **Utilidad** (son transaccionales: se aprueban más rápido y son más baratas que las de Marketing) e idioma **Español**.
+Ahora hay dos: la de prueba (`1815277973155566`) y la real (`403489972840929`). El Administrador de WhatsApp está scopeado a una WABA por vez —se elige en el selector de arriba a la derecha—, así que:
 
-| Nombre sugerido | Para quién | Variables |
-|---|---|---|
-| `nueva_reserva_admin` | Admin | nombre, fechas, personas, departamento, total, link |
-| `reserva_aprobada` | Huésped | nombre, fechas, total, monto de seña, vencimiento, datos bancarios |
-| `reserva_rechazada` | Huésped | nombre, fechas |
-| `viajante_confirmado` | Huésped | fechas, departamento |
-| `reserva_cancelada_sin_senia` | Huésped | nombre, fechas |
-| `recordatorio_pendientes` | Admin | cantidad, link |
+- Las plantillas que se creen en la **WABA de prueba** son las que permiten validar el circuito ahora, pero **no sobreviven a la migración**.
+- Hay que **volver a crearlas en la WABA real** antes de migrar. Los textos y los nombres son idénticos, así que es trabajo mecánico, pero hay que contarlo en el plan.
 
-Los textos actuales de `lib/notificaciones.ts` sirven como borrador: hay que reemplazar cada dato variable por `{{1}}`, `{{2}}`, etc., respetando el orden en que se pasan los parámetros.
+### Cómo crearlas
 
-> **Bloqueante de negocio:** la plantilla `reserva_aprobada` necesita los **datos bancarios** para la transferencia. Hoy el código tiene la constante `DATOS_BANCARIOS` con el texto "(Datos bancarios pendientes de cargar)". Conviene moverlos a `ConfiguracionGeneral` para que el dueño los edite desde el panel sin tocar código.
+**business.facebook.com** → **Administrador de WhatsApp** → **Plantillas de mensajes** → **Crear plantilla**.
+
+- **Categoría: Servicio.** En la interfaz nueva, "Utilidad" pasó a llamarse así. Son transaccionales: se aprueban más rápido y son más baratas que las de Marketing.
+- **Idioma: Spanish** (`es`, el genérico — no `Spanish (ARG)`). Es el valor que hay que pasarle a `enviarPlantilla`.
+- **Tipo de variable: Número**, que es el `{{1}}`, `{{2}}` posicional que espera `lib/whatsapp.ts`.
+
+> 🐛 **El editor de Meta autocompleta las llaves.** Al tipear `{{1}}` queda `{{1}}1}}` y la plantilla sale mal. Hay que insertar las variables con el botón **+ Añadir variable**, o pegar el cuerpo entero desde el portapapeles en vez de tipearlo.
+
+Meta exige además una **muestra** para cada variable. Son solo para la revisión, no se envían.
+
+### Las 8 plantillas
+
+Los textos salen de los mensajes actuales de `lib/notificaciones.ts`, reordenados para cumplir dos reglas de Meta: **el cuerpo no puede empezar ni terminar con una variable**, y **no puede haber dos variables pegadas**.
+
+#### 1. `nueva_reserva_admin` — al admin (6 variables)
+```
+🔔 NUEVA RESERVA PENDIENTE
+
+Huésped: {{1}}
+Fechas: {{2}}
+Personas: {{3}}
+Departamento: {{4}}
+Total: {{5}}
+
+Revisala en {{6}} y aprobala o rechazala desde el panel.
+```
+
+#### 2. `reserva_aprobada` — al huésped (6 variables)
+```
+✅ ¡Tu reserva en Los Gladiolos fue aprobada!
+
+Hola {{1}}, te confirmamos las fechas {{2}}.
+Total: {{3}}
+
+⏰ Para asegurarla, transferí la seña de {{4}} antes de las {{5}} hs.
+
+{{6}}
+
+Si no recibimos la seña en ese plazo, la reserva se cancela automáticamente. Cuando transfieras, mandanos el comprobante por acá.
+```
+`{{6}}` son los datos bancarios, que salen de `ConfiguracionGeneral`. **Por eso los datos bancarios ya no bloquean la creación de la plantilla**: van como parámetro en cada envío, no en el texto aprobado. Sí bloquean el envío real con sentido.
+
+#### 3. `reserva_rechazada` — al huésped (2 variables)
+```
+Hola {{1}}, lamentablemente no podemos confirmar tu reserva en Los Gladiolos para las fechas {{2}}.
+
+Cualquier consulta escribinos. ¡Gracias por contactarnos!
+```
+
+#### 4. `viajante_confirmado` — al huésped (2 variables)
+```
+✅ ¡Reserva confirmada en Los Gladiolos!
+
+Fechas: {{1}}
+Departamento: {{2}}
+
+Te esperamos. Check-in desde las 12:00 hs.
+```
+
+#### 5. `reserva_cancelada_sin_senia` — al huésped (3 variables)
+```
+Hola {{1}}, tu reserva en Los Gladiolos para las fechas {{2}} fue cancelada porque no recibimos la seña dentro del plazo.
+
+Si querés reservar de nuevo, entrá a {{3}} o escribinos por acá.
+```
+
+#### 6. `reserva_cancelada_admin` — al huésped, sin motivo (3 variables)
+```
+Hola {{1}}, tu reserva en Los Gladiolos para las fechas {{2}} fue cancelada.
+
+{{3}}
+
+Quedamos a disposición por cualquier consulta.
+```
+
+#### 7. `reserva_cancelada_admin_motivo` — al huésped, con motivo (4 variables)
+```
+Hola {{1}}, tu reserva en Los Gladiolos para las fechas {{2}} fue cancelada.
+
+Motivo: {{3}}
+
+{{4}}
+
+Quedamos a disposición por cualquier consulta.
+```
+
+> **Por qué dos plantillas para la cancelación manual.** El motivo es opcional en el código y **Meta rechaza los parámetros vacíos**, así que no se puede usar una sola plantilla y mandar `""`. La variable de cierre (`{{3}}` / `{{4}}`) resuelve el otro condicional del código sin duplicar de nuevo: lleva *"Nos vamos a comunicar con vos por la devolución de la seña."* si la seña estaba pagada, y *"Cualquier consulta escribinos por acá."* si no.
+
+#### 8. `recordatorio_pendientes` — al admin (2 variables)
+```
+⏰ Tenés {{1}} reserva(s) pendiente(s) de revisar.
+
+Entrá a {{2}} para verlas.
+```
+
+### El cambio en el código
+
+Una vez aprobadas, en `lib/notificaciones.ts` se reemplaza cada `enviarTexto(...)` por `enviarPlantilla(numero, nombre, "es", [...])`, respetando el orden de las variables de arriba. El armado de los valores (fechas formateadas, montos con separador de miles, el plazo en horas) **no cambia**: lo que hoy se concatena en el texto pasa a ser un elemento del array de parámetros.
+
+> ⚠️ **No hacer este cambio antes de que las plantillas estén aprobadas.** Si se adelanta, todos los envíos fallan con `(#132001) Template name does not exist` en vez de funcionar dentro de la ventana de 24 hs.
 
 La aprobación de cada plantilla suele tardar entre minutos y algunas horas.
 
@@ -349,15 +442,16 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 **En Meta:**
 - [ ] A.5: agregar el celular del dueño a la lista de destinatarios de prueba
-- [ ] Las 6 plantillas creadas y aprobadas
+- [ ] Las **8 plantillas** creadas y aprobadas **en la WABA de prueba** (textos exactos en la Parte C)
 
 **De código:**
-- [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los seis avisos
+- [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos ← solo después de que las plantillas estén aprobadas
 - [ ] Flujo completo probado de punta a punta
 
 ### Etapa 2 — Migración a los recursos reales
 
 - [ ] Número real dado de alta con **Coexistence**
+- [ ] **Las 8 plantillas recreadas en la WABA real** — no se heredan de la de prueba
 - [ ] Calendario real compartido con `reservas@los-gladiolos.iam.gserviceaccount.com`
 - [ ] `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738` (el real)
 - [ ] `GOOGLE_CALENDAR_ID` → calendario real
