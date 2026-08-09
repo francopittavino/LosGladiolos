@@ -27,6 +27,8 @@ Se completó el registro de desarrollador, se creó la app, se aplicó el caso d
 
 Las tres variables ya están cargadas en Vercel y **las 8 plantillas están creadas y en revisión** en la WABA de prueba.
 
+También se normalizó el teléfono del huésped en todo el circuito (`lib/telefono.ts`) y **la base quedó vacía**: las 6 reservas que había eran de prueba y ninguna tenía el teléfono en el formato que espera WhatsApp. Se borraron junto con su evento de calendario, para arrancar las pruebas limpio. Los scripts quedaron en `prisma/auditar-telefonos.ts` y `prisma/limpiar-reservas-prueba.ts`.
+
 ### Lo próximo
 
 1. **Esperar la aprobación de las 8 plantillas** (de minutos a horas).
