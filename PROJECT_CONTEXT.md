@@ -35,9 +35,15 @@ El código quedó completo: `lib/notificaciones.ts` usa plantillas en los siete 
 
 1. **Esperar la aprobación de las 8 plantillas.** Mientras estén en `PENDING`, todos los envíos fallan con `(#132001)`.
 2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Utilidad. Puede que Meta la recategorice sola durante la revisión; si no, hay que borrarla y rehacerla con otro nombre.
-3. **Migrar al número real.** Es lo único que falta para poder probar el circuito completo desde el sitio: la lista de destinatarios del número de prueba tiene un bug que rechaza el formato `549…` que usa la app. Está explicado en `WHATSAPP.md`.
+3. **Migrar al número real**, que es el cuello de botella de todo lo que queda.
 
-> Con el número de prueba **no se puede validar el flujo de punta a punta**. La entrega en sí ya está probada y funciona; lo que no se puede es dispararla desde la app.
+   El número real figura como **`ON_PREMISE`**: nunca se incorporó a la Cloud API. Hasta que eso no pase no se puede enviar desde él **ni crear las plantillas en la WABA real** — Meta lo bloquea con *"esta cuenta no tiene permiso para crear ni actualizar plantillas"*. Nada de esto se puede adelantar.
+
+   El trámite es el registro por **Coexistence** (Embedded Signup, con el celular en la mano). Lo tiene que hacer el dueño. Después de eso: crear las 9 plantillas con `scripts/clonar-plantillas.ts`, esperar aprobación, compartir el calendario real y cambiar las dos variables.
+
+> Con el número de prueba **no se puede validar el flujo de punta a punta**, por el bug de la lista de destinatarios. La entrega en sí ya está probada y funciona.
+
+
 
 ### Pendientes sueltos del 7/8
 

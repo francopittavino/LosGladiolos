@@ -598,6 +598,29 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 - [x] ~~Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos~~ — 9/8
 - [ ] Flujo completo probado de punta a punta ← **solo se puede con el número real**, por el bug de la lista de destinatarios
 
+### ⚠️ El orden real de la migración (relevado el 2026-08-09)
+
+Consultando la WABA real por la Graph API aparecieron dos cosas que cambian el plan:
+
+| Qué | Estado |
+|---|---|
+| WABA real `403489972840929` | `account_review_status: APPROVED` — no hay verificación pendiente |
+| Número real `407269815803738` | **`platform_type: ON_PREMISE`**, `code_verification_status: NOT_VERIFIED` |
+| Plantillas en la WABA real | **0** |
+
+**El número real nunca se incorporó a la Cloud API.** Quedó como `ON_PREMISE`, que es lo que deja el alta desde la app de WhatsApp Business del celular. El sistema usa la Cloud API, así que hasta que eso no cambie no hay nada que enviar desde ese número.
+
+Y las plantillas **no se pueden adelantar**: crearlas en la WABA real falla con *"Esta cuenta de WhatsApp Business no tiene permiso para crear ni actualizar plantillas"*. No es un problema de permisos del usuario del sistema —lee sin problema— sino del estado de la cuenta. Meta lo habilita recién después de la incorporación a la Cloud API.
+
+> O sea que **todo depende del registro por Coexistence**, y nada se puede paralelizar. Esperar la aprobación de las plantillas en la WABA de prueba sirve solo para validar que la redacción y las categorías pasan revisión; no es un requisito para migrar.
+
+**Secuencia obligada:**
+
+1. Registrar el número real en la Cloud API con **Coexistence** (Embedded Signup, con el celular en la mano; incluye verificar el número con un código).
+2. Recién entonces, crear las 9 plantillas en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`, que las copia de la de prueba.
+3. Esperar que aprueben.
+4. Compartir el calendario real con la service account y cambiar las dos variables en Vercel.
+
 ### Etapa 2 — Migración a los recursos reales
 
 - [ ] Número real dado de alta con **Coexistence**
