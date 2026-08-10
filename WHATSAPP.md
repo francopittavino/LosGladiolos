@@ -621,9 +621,62 @@ Y las plantillas **no se pueden adelantar**: crearlas en la WABA real falla con 
 3. Esperar que aprueben.
 4. Compartir el calendario real con la service account y cambiar las dos variables en Vercel.
 
+---
+
+## Paso a paso de la migración al número real
+
+Relevado el 2026-08-09 leyendo **Paso 2. Configuración de producción** en el Developer Center, que es la pantalla que hay que recorrer. Se llega desde developers.facebook.com → *Los Gladiolos Reservas* → **Casos de uso** → *Conectar en WhatsApp* → **Paso 2**.
+
+Meta lista cuatro tareas, y dos **no estaban en el plan**:
+
+| # | Tarea | Estado |
+|---|---|---|
+| 1 | Configurar Webhooks | Probablemente no haga falta — ver abajo |
+| 2 | Registrar tu número de teléfono de WhatsApp | ⬅ el trámite de Coexistence |
+| 3 | **Añadir un método de pago** | ⚠️ **nuevo** |
+| 4 | Enviar un mensaje | La prueba final |
+
+### 💳 El método de pago — el requisito que faltaba
+
+Meta lo pide textualmente **"para enviar mensajes iniciados por la empresa"**. Eso es *exactamente* lo que hace este sistema: todos los avisos los inicia el alojamiento, ninguno es respuesta a un mensaje del huésped.
+
+**Hay que cargar una tarjeta en el portafolio empresarial.** No es opcional ni se puede postergar: sin método de pago no salen los mensajes de producción. Conviene mirar de antemano el precio por conversación de utilidad en Argentina y el cupo gratuito vigente, porque cambian seguido.
+
+### 📢 La app está *Sin publicar*
+
+En el panel figura como **"En desarrollo"**. Meta avisa en esa misma pantalla:
+
+> *Las aplicaciones solo podrán recibir webhooks de prueba (…) No se entregará ningún dato de producción (…) a menos que esta se haya publicado.*
+
+Eso es explícito para webhooks. **Falta confirmar si el modo desarrollo también es lo que impone la lista de 5 destinatarios**: hasta ahora lo atribuimos al número de prueba, pero puede ser el modo de la app. Es lo primero a verificar apenas el número real esté registrado — si con la app sin publicar sigue rechazando destinatarios no autorizados, hay que publicarla.
+
+### 🔗 Los webhooks
+
+Sirven para recibir **mensajes entrantes** y actualizaciones de estado. **Este sistema no lee nada entrante**: solo envía. No hay endpoint de webhook en el código ni hace falta uno.
+
+Se puede saltear. Vale la pena volver sobre esto solo si más adelante se quiere, por ejemplo, detectar que el huésped respondió con el comprobante de la seña.
+
+### El orden
+
+1. **Método de pago** en el portafolio empresarial.
+2. **Registrar el número real** (`+54 9 343 451-2995`) con **Coexistence**. Requisitos: el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y hay que verificarlo con un código — hoy figura `code_verification_status: NOT_VERIFIED`. Al terminar, `platform_type` tiene que pasar de `ON_PREMISE` a `CLOUD_API`; se comprueba con `scripts/verificar-whatsapp.ts`.
+3. **Crear las 9 plantillas** en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`. Recién funciona después del paso 2.
+4. **Esperar la aprobación** de las 9.
+5. **Compartir el calendario real** con `reservas@los-gladiolos.iam.gserviceaccount.com`, con permiso de "Hacer cambios en los eventos".
+6. **Cambiar dos variables en Vercel** y redeployar:
+   - `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738`
+   - `GOOGLE_CALENDAR_ID` → calendario real
+7. **Probar el circuito completo** desde el sitio: crear una reserva y confirmarla desde el panel. Es la primera vez que se va a poder, porque desaparece la lista de destinatarios.
+
+> El **token no se toca** en ningún momento: ya tiene acceso a las dos WABAs.
+
+---
+
 ### Etapa 2 — Migración a los recursos reales
 
-- [ ] Número real dado de alta con **Coexistence**
+- [ ] **Método de pago cargado** en el portafolio empresarial ← sin esto no salen los mensajes
+- [ ] Número real dado de alta con **Coexistence** (`platform_type` pasa a `CLOUD_API`)
+- [ ] Verificar si hace falta **publicar la app** para levantar el límite de destinatarios
 - [ ] **Las 9 plantillas recreadas en la WABA real** — no se heredan de la de prueba
 - [ ] Calendario real compartido con `reservas@los-gladiolos.iam.gserviceaccount.com`
 - [ ] `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738` (el real)
