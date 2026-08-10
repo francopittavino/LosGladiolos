@@ -47,15 +47,15 @@ También se normalizó el teléfono del huésped en todo el circuito (`lib/telef
 
 El código quedó completo: `lib/notificaciones.ts` usa plantillas en los siete avisos, y los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API. Los datos bancarios ya están cargados y el número del alojamiento está habilitado como destinatario de prueba.
 
-### 🔴 Decisión abierta del negocio
+### ✅ Decisión cerrada (2026-08-10): los avisos internos van al celular del personal
 
-**Por dónde recibe el dueño los avisos internos** (reserva nueva, reserva de viajante, recordatorio de pendientes). Lo está consultando con el cliente.
+Los tres avisos internos —reserva nueva, reserva de viajante, recordatorio de pendientes— van por **WhatsApp al celular del personal**, un número distinto del emisor. Eso resuelve el choque con Meta, que **no permite que un número se envíe mensajes a sí mismo**.
 
-Surgió porque Meta **no permite que un número se envíe mensajes a sí mismo**, y `WHATSAPP_ADMIN_PHONE` apunta hoy al mismo número que va a ser el emisor después de migrar. Las opciones y sus consecuencias están en `WHATSAPP.md`.
+**No hay trabajo de código.** Es cambiar `WHATSAPP_ADMIN_PHONE` en Vercel el día de la migración. Queda pendiente que el dueño pase el número.
 
-Si la respuesta es **correo**, hay trabajo de código previo a la migración. Si es *WhatsApp personal* o *sin avisos*, se resuelve el mismo día.
+Se evaluó mandarlos a un **grupo de WhatsApp con todos los empleados** y **no se puede**: la Cloud API no envía a grupos, `to` solo acepta un número individual. Lo más parecido sería una lista de destinatarios (fan-out en `lib/notificaciones.ts`), **descartado por costo**: cada empleado es un mensaje facturado y el recordatorio del cron se reenvía cada 2 hs.
 
-> El aviso al huésped **no está en discusión**: sale por WhatsApp desde el número del alojamiento.
+> El aviso al huésped sale por WhatsApp desde el número del alojamiento, y el comprobante sigue llegando a esa conversación.
 
 ### Lo próximo
 
@@ -83,6 +83,7 @@ Si la respuesta es **correo**, hay trabajo de código previo a la migración. Si
 - La verificación del negocio en Meta **no hace falta**: el Centro de seguridad dice que esta organización no tiene que completarla.
 - **No existe un número de prueba de Meta**: aparece recién al crear la app de desarrollador. Lo que hay conectado es el número real de la empresa.
 - Las variables `sensitive` de Vercel **no se pueden leer de vuelta**. Nunca.
+- **La Cloud API no envía mensajes a grupos de WhatsApp.** `to` solo acepta un número individual; no hay endpoint de grupos y no lo destraba ninguna verificación.
 
 ---
 

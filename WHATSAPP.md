@@ -735,29 +735,30 @@ WHATSAPP_ADMIN_PHONE      →  5493434512995        (destinatario)
 
 **Entonces `WHATSAPP_ADMIN_PHONE` no puede quedar en `5493434512995`**, porque ese número va a ser el emisor.
 
-### 🔴 Decisión abierta: por dónde recibe el dueño los avisos internos
+### ✅ Resuelto (2026-08-10): los avisos internos van al celular del personal
 
-**Al 2026-08-10 está sin resolver. El dueño lo va a consultar con el cliente.** Afecta solo a los tres avisos internos —reserva nueva, reserva de viajante y recordatorio de pendientes—; **el aviso al huésped no está en discusión**: sigue saliendo por WhatsApp desde el número del alojamiento, y el comprobante sigue llegando a esa conversación.
+Afecta solo a los tres avisos internos —reserva nueva, reserva de viajante y recordatorio de pendientes—; **el aviso al huésped nunca estuvo en discusión**: sale por WhatsApp desde el número del alojamiento, y el comprobante sigue llegando a esa conversación.
 
-> **Descartada la segunda línea prepaga.** Un chip sin un dispositivo con ese WhatsApp abierto no sirve: los mensajes llegarían a una cuenta que nadie mira. El dueño no quiere mantener otro dispositivo.
+**Decidido: `WHATSAPP_ADMIN_PHONE` pasa a ser el celular del personal.** Es un número distinto del emisor, así que desaparece el problema del auto-envío. **No hay trabajo de código**: es cambiar la variable en Vercel el día de la migración (paso 7 del runbook). Falta que el dueño pase el número.
 
-| Opción | Costo | Contra | Trabajo previo |
-|---|---|---|---|
-| **Correo** | Gratis | — | Sumar un servicio de envío y cambiar los tres avisos. **Hay que hacerlo antes de migrar** |
-| **WhatsApp personal** | Se le paga a Meta | Mezcla avisos del negocio con lo personal | Ninguno: es cambiar una variable |
-| **Sin avisos** | Gratis | Solo se entera entrando al panel | Sacar los tres avisos |
+Esa línea **no envía nada**: el emisor sigue siendo el número del alojamiento. Solo recibe los "nueva reserva" y los recordatorios, separados de las conversaciones con huéspedes.
 
-**El correo es la opción más limpia** y la que más ahorra: los avisos internos son cerca de la mitad del volumen, y el recordatorio de pendientes era el mayor costo individual —hasta unos USD 9 al mes si el dueño tarda en revisar—. Además saca a Meta del medio para esos tres: sin plantillas, sin categorías y sin el problema del auto-envío.
+#### ❌ No se puede mandar a un grupo de WhatsApp
 
-⏱️ **Importa cuándo se decida.** Si la respuesta es *WhatsApp personal* o *sin avisos*, se resuelve el mismo día de la migración. Si es *correo*, hay trabajo de código previo y conviene saberlo con tiempo.
+Era la preferencia del dueño —un grupo con todos los empleados— y **la Cloud API no lo permite**. No hay endpoint de grupos: `POST /{phone-number-id}/messages` acepta en `to` un número individual y nada más. No es un límite de esta cuenta ni algo que destrabe la verificación del negocio: no existe en el producto. La mensajería a grupos vive en la app del celular, no en la API.
 
-Importa entender el rol: esa línea **no envía nada**. El emisor sigue siendo el número del alojamiento, así que el huésped sigue recibiendo desde ahí y los comprobantes siguen llegando a esa misma conversación — que es justamente lo que el dueño quiere. La línea nueva solo recibe los "nueva reserva" y los recordatorios, separados de las conversaciones con huéspedes.
+**Lo más parecido sería una lista de destinatarios** (fan-out): `WHATSAPP_ADMIN_PHONE` como lista separada por comas e iterar en `adminPhone()` de `lib/notificaciones.ts` —el único lugar que la lee, usado por los tres avisos internos—. **Descartado por costo**: Meta cobra por mensaje entregado, así que cada empleado de la lista es un mensaje aparte. Lo caro no son las reservas (~$4/mes) sino el recordatorio del cron, que se reenvía cada `HORAS_ENTRE_RECORDATORIOS` (hoy 2): ~$9/mes con un destinatario, ~$36 con cuatro. Si alguna vez se implementa, subir esa constante en el mismo movimiento.
 
-Alcanza con una SIM prepaga; no hace falta otro teléfono si el del dueño acepta dos.
+#### Opciones evaluadas y descartadas
 
-> **Antes de comprar nada**: poner el número de un familiar como `WHATSAPP_ADMIN_PHONE` por unos minutos y confirmar que el aviso llega. Eso descarta que el problema sea otro y recién ahí se compra el chip sabiendo que resuelve.
-
-Descartadas: el celular personal del dueño (no quiere avisos ahí) y sacar el aviso por WhatsApp (perdería la alerta de reserva nueva).
+| Opción | Por qué no |
+|---|---|
+| **Grupo de WhatsApp** | La Cloud API no envía a grupos |
+| **Lista de varios empleados** | El costo se multiplica por persona, sobre todo el recordatorio cada 2 hs |
+| **Correo** | Era la más barata, pero exigía sumar un servicio de envío y cambiar los tres avisos **antes** de migrar |
+| **Segunda línea prepaga** | Un chip sin un dispositivo con ese WhatsApp abierto no sirve: nadie miraría esa cuenta. El dueño no quiere mantener otro dispositivo |
+| **Celular personal del dueño** | No quiere mezclar los avisos del negocio con lo personal |
+| **Sin avisos** | Perdería la alerta de reserva nueva: solo se enteraría entrando al panel |
 
 #### Antes de arrancar
 
@@ -788,7 +789,7 @@ Descartadas: el celular personal del dueño (no quiere avisos ahí) y sacar el a
 7. En Vercel, cambiar y **redeployar**:
    - `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738`
    - `GOOGLE_CALENDAR_ID` → calendario real
-   - `WHATSAPP_ADMIN_PHONE` → **el número elegido en la decisión previa**. No puede quedar en `5493434512995`: sería el emisor mandándose mensajes a sí mismo, y Meta no lo permite.
+   - `WHATSAPP_ADMIN_PHONE` → **el celular del personal**. No puede quedar en `5493434512995`: sería el emisor mandándose mensajes a sí mismo, y Meta no lo permite.
 
 #### Fase 3 — Verificar, en este orden
 
@@ -797,7 +798,7 @@ Descartadas: el celular personal del dueño (no quiere avisos ahí) y sacar el a
    npx tsx scripts/enviar-mensaje-prueba.ts
    ```
    Si llega, `lib/telefono.ts` está bien y el tema del `9` queda cerrado. Si diera `(#131030)` u otro error de destinatario, hay que sacar el `9` en `lib/telefono.ts` — es un solo lugar.
-9. **El aviso al admin.** Crear una reserva desde el sitio: el aviso tiene que llegar al número elegido en la decisión previa, que no puede ser el emisor.
+9. **El aviso al admin.** Crear una reserva desde el sitio: el aviso tiene que llegar al celular del personal, que no puede ser el emisor.
 10. **El aviso al huésped.** Confirmar esa reserva desde el panel: el mensaje de la seña tiene que llegar al teléfono que cargó el cliente.
 11. **Mirar el evento** en el calendario real.
 12. **Borrar la reserva de prueba**: `npx tsx prisma/limpiar-reservas-prueba.ts --confirmar`.
