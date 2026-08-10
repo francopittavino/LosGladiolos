@@ -31,6 +31,16 @@ También se normalizó el teléfono del huésped en todo el circuito (`lib/telef
 
 El código quedó completo: `lib/notificaciones.ts` usa plantillas en los siete avisos, y los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API. Los datos bancarios ya están cargados y el número del alojamiento está habilitado como destinatario de prueba.
 
+### 🔴 Decisión abierta del negocio
+
+**Por dónde recibe el dueño los avisos internos** (reserva nueva, reserva de viajante, recordatorio de pendientes). Lo está consultando con el cliente.
+
+Surgió porque Meta **no permite que un número se envíe mensajes a sí mismo**, y `WHATSAPP_ADMIN_PHONE` apunta hoy al mismo número que va a ser el emisor después de migrar. Las opciones y sus consecuencias están en `WHATSAPP.md`.
+
+Si la respuesta es **correo**, hay trabajo de código previo a la migración. Si es *WhatsApp personal* o *sin avisos*, se resuelve el mismo día.
+
+> El aviso al huésped **no está en discusión**: sale por WhatsApp desde el número del alojamiento.
+
 ### Lo próximo
 
 1. **Esperar la aprobación de las 8 plantillas.** Mientras estén en `PENDING`, todos los envíos fallan con `(#132001)`.

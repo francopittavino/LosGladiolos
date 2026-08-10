@@ -733,12 +733,23 @@ WHATSAPP_ADMIN_PHONE      →  5493434512995        (destinatario)
 
 > Las dos pruebas locales quedaron inconclusas y vale saber por qué, para no repetirlas. Enviar del número de prueba a sí mismo devuelve `(#131030)`: el chequeo de la lista de destinatarios corre primero y tapa el caso, y agregar ese número a su propia lista pediría un código a un número de Estados Unidos. Y usar el número real como emisor devuelve `(#133010) Account not registered`, la prueba dura de que **nada se puede verificar antes del registro por Coexistence**.
 
-**Entonces `WHATSAPP_ADMIN_PHONE` no puede quedar en `5493434512995`**, porque ese número va a ser el emisor. Hay que decidir **antes** de migrar entre:
+**Entonces `WHATSAPP_ADMIN_PHONE` no puede quedar en `5493434512995`**, porque ese número va a ser el emisor.
 
-1. **El celular personal del dueño.** Gratis e inmediato: es cambiar una variable. El costo es que los avisos de reserva caen en el WhatsApp personal, que es lo que se quería evitar.
-2. **Una segunda línea prepaga**, que solo recibe. Mantiene los avisos separados de las conversaciones con huéspedes. **Conviene conseguirla antes del día de la migración**: si no, los avisos de admin quedan sin funcionar hasta que aparezca el chip.
+### 🔴 Decisión abierta: por dónde recibe el dueño los avisos internos
 
-En cualquiera de los dos casos, lo que **no cambia** es que el huésped recibe desde el número del alojamiento y el comprobante llega a esa misma conversación.
+**Al 2026-08-10 está sin resolver. El dueño lo va a consultar con el cliente.** Afecta solo a los tres avisos internos —reserva nueva, reserva de viajante y recordatorio de pendientes—; **el aviso al huésped no está en discusión**: sigue saliendo por WhatsApp desde el número del alojamiento, y el comprobante sigue llegando a esa conversación.
+
+> **Descartada la segunda línea prepaga.** Un chip sin un dispositivo con ese WhatsApp abierto no sirve: los mensajes llegarían a una cuenta que nadie mira. El dueño no quiere mantener otro dispositivo.
+
+| Opción | Costo | Contra | Trabajo previo |
+|---|---|---|---|
+| **Correo** | Gratis | — | Sumar un servicio de envío y cambiar los tres avisos. **Hay que hacerlo antes de migrar** |
+| **WhatsApp personal** | Se le paga a Meta | Mezcla avisos del negocio con lo personal | Ninguno: es cambiar una variable |
+| **Sin avisos** | Gratis | Solo se entera entrando al panel | Sacar los tres avisos |
+
+**El correo es la opción más limpia** y la que más ahorra: los avisos internos son cerca de la mitad del volumen, y el recordatorio de pendientes era el mayor costo individual —hasta unos USD 9 al mes si el dueño tarda en revisar—. Además saca a Meta del medio para esos tres: sin plantillas, sin categorías y sin el problema del auto-envío.
+
+⏱️ **Importa cuándo se decida.** Si la respuesta es *WhatsApp personal* o *sin avisos*, se resuelve el mismo día de la migración. Si es *correo*, hay trabajo de código previo y conviene saberlo con tiempo.
 
 Importa entender el rol: esa línea **no envía nada**. El emisor sigue siendo el número del alojamiento, así que el huésped sigue recibiendo desde ahí y los comprobantes siguen llegando a esa misma conversación — que es justamente lo que el dueño quiere. La línea nueva solo recibe los "nueva reserva" y los recordatorios, separados de las conversaciones con huéspedes.
 
