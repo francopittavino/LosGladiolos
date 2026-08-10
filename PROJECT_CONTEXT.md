@@ -29,14 +29,15 @@ Las tres variables ya están cargadas en Vercel y **las 8 plantillas están crea
 
 También se normalizó el teléfono del huésped en todo el circuito (`lib/telefono.ts`) y **la base quedó vacía**: las 6 reservas que había eran de prueba y ninguna tenía el teléfono en el formato que espera WhatsApp. Se borraron junto con su evento de calendario, para arrancar las pruebas limpio. Los scripts quedaron en `prisma/auditar-telefonos.ts` y `prisma/limpiar-reservas-prueba.ts`.
 
+El código quedó completo: `lib/notificaciones.ts` usa plantillas en los siete avisos, y los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API. Los datos bancarios ya están cargados y el número del alojamiento está habilitado como destinatario de prueba.
+
 ### Lo próximo
 
-1. **Esperar la aprobación de las 8 plantillas** (de minutos a horas).
-2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Servicio. Puede que Meta la recategorice sola durante la revisión; si no, hay que borrarla y rehacerla con otro nombre. El detalle está en `WHATSAPP.md`.
-3. **Agregar el celular del dueño** como destinatario de prueba (paso A.5): el número de prueba solo escribe a 5 números autorizados.
-4. **Cambiar `enviarTexto()` por `enviarPlantilla()`** en los siete avisos de `lib/notificaciones.ts` — recién cuando las plantillas estén aprobadas, si no todo falla con `(#132001)`.
-5. **Cargar los datos bancarios** en `/admin/configuracion`.
-6. Probar el flujo completo de punta a punta.
+1. **Esperar la aprobación de las 8 plantillas.** Mientras estén en `PENDING`, todos los envíos fallan con `(#132001)`.
+2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Utilidad. Puede que Meta la recategorice sola durante la revisión; si no, hay que borrarla y rehacerla con otro nombre.
+3. **Migrar al número real.** Es lo único que falta para poder probar el circuito completo desde el sitio: la lista de destinatarios del número de prueba tiene un bug que rechaza el formato `549…` que usa la app. Está explicado en `WHATSAPP.md`.
+
+> Con el número de prueba **no se puede validar el flujo de punta a punta**. La entrega en sí ya está probada y funciona; lo que no se puede es dispararla desde la app.
 
 ### Pendientes sueltos del 7/8
 

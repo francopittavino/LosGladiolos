@@ -485,11 +485,17 @@ Quedamos a disposición por cualquier consulta.
 Entrá a {{2}} para verlas.
 ```
 
-### El cambio en el código
+### El cambio en el código — ✅ hecho
 
-Una vez aprobadas, en `lib/notificaciones.ts` se reemplaza cada `enviarTexto(...)` por `enviarPlantilla(numero, nombre, "es", [...])`, respetando el orden de las variables de arriba. El armado de los valores (fechas formateadas, montos con separador de miles, el plazo en horas) **no cambia**: lo que hoy se concatena en el texto pasa a ser un elemento del array de parámetros.
+`lib/notificaciones.ts` ya usa `enviarPlantilla(numero, nombre, "es", [...])` en los siete avisos. Los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API: las 8 coinciden.
 
-> ⚠️ **No hacer este cambio antes de que las plantillas estén aprobadas.** Si se adelanta, todos los envíos fallan con `(#132001) Template name does not exist` en vez de funcionar dentro de la ventana de 24 hs.
+Tres cosas que salieron al implementarlo:
+
+- **Meta rechaza parámetros con saltos de línea, tabulaciones, más de cuatro espacios seguidos o vacíos.** Hay un helper `param()` que los limpia. El caso típico son los **datos bancarios**, que el dueño carga en varias líneas desde el panel: se colapsan a una sola con ` · ` de separador.
+- **`reserva_aprobada` necesita monto y vencimiento de seña sí o sí**, porque van incrustados en la frase. Si faltaran, el aviso se saltea con un log explícito en vez de mandar algo incoherente. En la práctica siempre están: se calculan justo antes de notificar.
+- La cancelación manual elige entre `reserva_cancelada_admin` y `reserva_cancelada_admin_motivo` según haya motivo o no.
+
+> Se hizo antes de la aprobación a propósito: con el número de prueba hoy **no se entrega nada** de todos modos, así que no había regresión posible. Mientras estén en `PENDING`, los envíos fallan con `(#132001) Template name does not exist`.
 
 La aprobación de cada plantilla suele tardar entre minutos y algunas horas.
 
@@ -549,8 +555,9 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 - [ ] Resolver la categoría de `reserva_cancelada_admin_motivo` (ver Parte C)
 
 **De código:**
-- [ ] Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos ← solo después de que las plantillas estén aprobadas
-- [ ] Flujo completo probado de punta a punta
+- [x] ~~Normalizar el teléfono del huésped~~ — `lib/telefono.ts`, 9/8
+- [x] ~~Cambiar `enviarTexto()` por `enviarPlantilla()` en los siete avisos~~ — 9/8
+- [ ] Flujo completo probado de punta a punta ← **solo se puede con el número real**, por el bug de la lista de destinatarios
 
 ### Etapa 2 — Migración a los recursos reales
 
