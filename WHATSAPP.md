@@ -86,11 +86,29 @@ Al agregar `+54 9 343 451-2995` como destinatario, la interfaz lo muestra bien p
 - **En producción no pasa nada.** Con el número real no hay lista de destinatarios: se le puede escribir a cualquiera, y `549…` es el identificador canónico.
 - **Mientras se prueba con el número de prueba**, todo lo que mande la app al admin va a fallar con `(#131030)`, porque la app envía `549…` y la lista tiene `54…15…`.
 
-### Cómo destrabarlo para probar
+### No tiene arreglo: la interfaz no deja registrar la forma con `9`
 
-Borrar el destinatario y volver a agregarlo, probando otro formato de entrada a ver si Meta lo guarda como `549…` (cuesta un código de verificación nuevo). Si Meta insiste en el formato con `15`, no queda otra que probar la entrega con scripts que manden al formato crudo —como `scripts/enviar-mensaje-prueba.ts`— y dejar la prueba del circuito completo para después de migrar al número real.
+Se probó agregar el mismo número una segunda vez escribiéndolo sin el `9` (`3434512995`). Meta lo aceptó sin pedir código nuevo —ya estaba verificado— y lo guardó como `543434512995`. Con **las dos** entradas registradas, el resultado es:
 
-> **No "arreglar" `lib/telefono.ts` para que genere el formato con `15`.** Sería romper lo que está bien para acomodar un bug de la lista de prueba, y rompería producción.
+| `to` enviado | Resultado |
+|---|---|
+| `5493434512995` | ❌ `(#131030)` |
+| `543434512995` | ✅ HTTP 200 → `wa_id: 5493434512995` |
+| `54343154512995` | ✅ HTTP 200 → `wa_id: 5493434512995` |
+
+**La interfaz convierte siempre y nunca guarda la forma con `9`.** No hay manera de alinear la lista de prueba con lo que manda la app.
+
+### Por qué igual conviene dejar el `9`
+
+Meta acepta las tres formas y las resuelve al mismo `wa_id`, así que en producción cualquiera sirve. Pero **el `9` es lo que marca explícitamente que es un celular**: sin él, el número es ambiguo con una línea fija, que no tiene WhatsApp. Ese es el motivo de fondo para no sacarlo.
+
+> **No cambiar `lib/telefono.ts` para acomodarse a la lista de prueba.** Es una limitación temporal de un recurso de prueba; el formato que genera es correcto y es el `wa_id` que devuelve la propia Meta.
+>
+> Ojo que esto **corrige** lo que decía la Parte A.5 de este documento: que sin el `9` "Meta busca un WhatsApp inexistente y el mensaje no llega". Es falso — `543434512995` entrega perfecto. El `9` importa por desambiguación, no porque sin él falle.
+
+### Qué implica para las pruebas
+
+Los avisos que mande la app al admin van a fallar con `(#131030)` mientras se use el número de prueba. Para validar la entrega hay que usar `scripts/enviar-mensaje-prueba.ts`, que manda al formato que la lista acepta. **El circuito completo desde el sitio recién se puede probar con el número real**, donde no hay lista de destinatarios.
 
 ---
 
