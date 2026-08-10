@@ -68,6 +68,32 @@ Un número extranjero escrito con `+` se respeta tal cual. Los que no se pueden 
 
 ---
 
+## 🐛 La lista de destinatarios de prueba compara el texto crudo
+
+**Encontrado el 2026-08-09, probando la entrega real.** Es específico del número de prueba y **no afecta a producción**, pero mientras dure la etapa de pruebas hace fallar todos los avisos al admin.
+
+Al agregar `+54 9 343 451-2995` como destinatario, la interfaz lo muestra bien pero **lo guarda como `54343154512995`** — con el `15`, sin el `9`. Y el chequeo de la lista compara contra ese texto crudo, sin normalizar:
+
+| `to` enviado | Resultado |
+|---|---|
+| `5493434512995` | ❌ `(#131030) Recipient phone number not in allowed list` |
+| `54343154512995` | ✅ HTTP 200, entregado |
+
+**Lo llamativo es que en la respuesta exitosa Meta devuelve `"wa_id": "5493434512995"`.** O sea que el formato que genera `lib/telefono.ts` es el correcto: es la identidad real de la cuenta, la que Meta misma resuelve. El que está mal es el registro de la lista de prueba.
+
+### Qué implica
+
+- **En producción no pasa nada.** Con el número real no hay lista de destinatarios: se le puede escribir a cualquiera, y `549…` es el identificador canónico.
+- **Mientras se prueba con el número de prueba**, todo lo que mande la app al admin va a fallar con `(#131030)`, porque la app envía `549…` y la lista tiene `54…15…`.
+
+### Cómo destrabarlo para probar
+
+Borrar el destinatario y volver a agregarlo, probando otro formato de entrada a ver si Meta lo guarda como `549…` (cuesta un código de verificación nuevo). Si Meta insiste en el formato con `15`, no queda otra que probar la entrega con scripts que manden al formato crudo —como `scripts/enviar-mensaje-prueba.ts`— y dejar la prueba del circuito completo para después de migrar al número real.
+
+> **No "arreglar" `lib/telefono.ts` para que genere el formato con `15`.** Sería romper lo que está bien para acomodar un bug de la lista de prueba, y rompería producción.
+
+---
+
 ## Limitaciones del número de prueba
 
 - Solo se le puede escribir a **hasta 5 destinatarios pre-registrados** (paso A.5). Alcanza para probar el circuito completo con el celular del dueño, pero **no se puede probar con un huésped real** hasta migrar.
