@@ -714,6 +714,59 @@ Sirven para recibir **mensajes entrantes** y actualizaciones de estado. **Este s
 
 Se puede saltear. Vale la pena volver sobre esto solo si más adelante se quiere, por ejemplo, detectar que el huésped respondió con el comprobante de la seña.
 
+### 📋 Runbook del día de la migración
+
+Pensado para que **el sistema nunca quede peor que hoy**. La clave es no tocar la variable de Vercel hasta que las plantillas de la WABA real estén aprobadas: mientras tanto la app sigue apuntando al número de prueba y no cambia nada.
+
+#### Antes de arrancar
+
+- [ ] Las 9 plantillas **aprobadas en la WABA de prueba**. No es un requisito técnico, pero si alguna se rechaza conviene corregir el texto antes de recrearlas del otro lado.
+- [ ] **Cero reservas activas** en la base: `npx tsx prisma/auditar-telefonos.ts` lo dice. Ver la nota del calendario más abajo.
+- [ ] Día de semana, a la mañana, con margen para reaccionar. **Nunca un viernes ni antes de un fin de semana largo.**
+- [ ] El celular con la app de **WhatsApp Business** a mano.
+
+#### Fase 1 — Preparar (no afecta a producción)
+
+1. **Cargar el método de pago** en el portafolio empresarial.
+2. **Registrar el número real** con Coexistence, desde *Paso 2. Configuración de producción*. Incluye verificarlo con un código.
+3. **Comprobar que cambió de plataforma**:
+   ```
+   npx tsx scripts/verificar-whatsapp.ts
+   ```
+   El número real tiene que pasar de `ON_PREMISE` / `DISCONNECTED` a `CLOUD_API` / `CONNECTED`.
+4. **Crear las 9 plantillas en la WABA real**:
+   ```
+   npx tsx scripts/clonar-plantillas.ts            # simulación
+   npx tsx scripts/clonar-plantillas.ts --confirmar
+   ```
+5. **Esperar la aprobación.** De minutos a horas. Hasta acá **producción sigue intacta**: la app apunta al número de prueba.
+
+#### Fase 2 — El cambio (dos minutos)
+
+6. **Compartir el calendario real** con `reservas@los-gladiolos.iam.gserviceaccount.com`, permiso "Hacer cambios en los eventos".
+7. En Vercel, cambiar y **redeployar**:
+   - `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738`
+   - `GOOGLE_CALENDAR_ID` → calendario real
+
+#### Fase 3 — Verificar, en este orden
+
+8. **Primero, el chequeo que decide si el código está bien.** Mandarse un mensaje a un celular cualquiera que **no** sea el del alojamiento:
+   ```
+   npx tsx scripts/enviar-mensaje-prueba.ts
+   ```
+   Si llega, `lib/telefono.ts` está bien y el tema del `9` queda cerrado. Si diera `(#131030)` u otro error de destinatario, hay que sacar el `9` en `lib/telefono.ts` — es un solo lugar.
+9. **Una reserva real desde el sitio**, con un teléfono propio. Tienen que llegar **dos** mensajes: el aviso al admin y, al confirmarla desde el panel, el de la seña al huésped.
+10. **Mirar el evento** en el calendario real.
+11. **Borrar la reserva de prueba**: `npx tsx prisma/limpiar-reservas-prueba.ts --confirmar`.
+
+#### Si algo sale mal
+
+**Volver atrás es cambiar una variable.** `WHATSAPP_PHONE_NUMBER_ID` al valor de prueba (`1251498061386053`) y redeploy: se vuelve exactamente al estado de hoy. Las reservas se siguen tomando igual — los envíos son *best effort* y su fallo nunca rompe una reserva.
+
+Lo único que no tiene vuelta atrás simple es el registro del número en la Cloud API. Por eso Coexistence: el número sigue funcionando en la app del celular.
+
+> ⚠️ **Sobre el calendario.** Al cambiar `GOOGLE_CALENDAR_ID`, las reservas que ya tengan `googleEventId` apuntan a eventos del calendario viejo: editarlas o cancelarlas fallaría al no encontrarlos. **Hoy la base está vacía, así que el problema no existe.** Es un motivo fuerte para migrar pronto: cuanto más se espere, más probable es tener reservas vivas y tener que migrar eventos a mano.
+
 ### El orden
 
 1. **Método de pago** en el portafolio empresarial.
