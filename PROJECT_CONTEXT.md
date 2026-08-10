@@ -8,9 +8,25 @@
 
 ---
 
-## ⏸️ Dónde retomar — última sesión: 2026-08-09
+## ⏸️ Dónde retomar — última sesión: 2026-08-10
 
-**El sistema está completo y funcionando. Falta solamente WhatsApp.**
+**El sistema está completo y funcionando. Falta solamente WhatsApp, y del lado del código ya no queda nada.**
+
+### 👉 Lo primero que va a pasar
+
+El dueño quedó en, al día siguiente:
+
+1. **Hablar con el cliente** para cerrar la decisión abierta de más abajo.
+2. **Hacer el registro por Coexistence** del número real.
+
+Apenas eso esté hecho, lo que sigue se hace por API y sin navegador:
+
+```
+npx tsx scripts/verificar-whatsapp.ts             # confirma CLOUD_API / CONNECTED
+npx tsx scripts/clonar-plantillas.ts --confirmar  # crea las 9 en la WABA real
+```
+
+El runbook completo del día de la migración —con las verificaciones y la vuelta atrás— está en `WHATSAPP.md`.
 
 ### Avances del 9/8 — toda la configuración de Meta quedó lista
 
@@ -25,7 +41,7 @@ Se completó el registro de desarrollador, se creó la app, se aplicó el caso d
 
 **Lo que destrabó todo fue activar la autenticación en dos pasos** del usuario administrador. Meta la exige para acciones sensibles sobre un portafolio y, en vez de decirlo, fallaba con un error genérico. El detalle está en `WHATSAPP.md`.
 
-Las tres variables ya están cargadas en Vercel y **las 8 plantillas están creadas y en revisión** en la WABA de prueba.
+Las tres variables ya están cargadas en Vercel y **las 9 plantillas están creadas y en revisión** en la WABA de prueba.
 
 También se normalizó el teléfono del huésped en todo el circuito (`lib/telefono.ts`) y **la base quedó vacía**: las 6 reservas que había eran de prueba y ninguna tenía el teléfono en el formato que espera WhatsApp. Se borraron junto con su evento de calendario, para arrancar las pruebas limpio. Los scripts quedaron en `prisma/auditar-telefonos.ts` y `prisma/limpiar-reservas-prueba.ts`.
 
@@ -43,8 +59,8 @@ Si la respuesta es **correo**, hay trabajo de código previo a la migración. Si
 
 ### Lo próximo
 
-1. **Esperar la aprobación de las 8 plantillas.** Mientras estén en `PENDING`, todos los envíos fallan con `(#132001)`.
-2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Utilidad. Puede que Meta la recategorice sola durante la revisión; si no, hay que borrarla y rehacerla con otro nombre.
+1. **Esperar la aprobación de las 9 plantillas.** No está en el camino crítico: solo valida que la redacción y las categorías pasan revisión antes de recrearlas en la WABA real.
+2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Utilidad. Si Meta no la recategoriza sola, se corrige **editándola por la Graph API** (`POST /{template_id}` con `"category": "UTILITY"`), sin borrarla ni cambiarle el nombre.
 3. **Migrar al número real**, que es el cuello de botella de todo lo que queda.
 
    El número real figura como **`ON_PREMISE`**: nunca se incorporó a la Cloud API. Hasta que eso no pase no se puede enviar desde él **ni crear las plantillas en la WABA real** — Meta lo bloquea con *"esta cuenta no tiene permiso para crear ni actualizar plantillas"*. Nada de esto se puede adelantar.
