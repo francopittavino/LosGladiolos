@@ -51,7 +51,7 @@ El código quedó completo: `lib/notificaciones.ts` usa plantillas en los siete 
 
 Los tres avisos internos —reserva nueva, reserva de viajante, recordatorio de pendientes— van por **WhatsApp al celular del personal**, un número distinto del emisor. Eso resuelve el choque con Meta, que **no permite que un número se envíe mensajes a sí mismo**.
 
-**No hay trabajo de código.** Es cambiar `WHATSAPP_ADMIN_PHONE` en Vercel el día de la migración. Queda pendiente que el dueño pase el número.
+**No hay trabajo de código.** Es cambiar `WHATSAPP_ADMIN_PHONE` en Vercel el día de la migración. El número es **`5493434289399`** (+54 9 343 428-9399).
 
 Se evaluó mandarlos a un **grupo de WhatsApp con todos los empleados** y **no se puede**: la Cloud API no envía a grupos, `to` solo acepta un número individual. Lo más parecido sería una lista de destinatarios (fan-out en `lib/notificaciones.ts`), **descartado por costo**: cada empleado es un mensaje facturado y el recordatorio del cron se reenvía cada 2 hs.
 

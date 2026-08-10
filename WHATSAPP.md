@@ -698,7 +698,17 @@ Meta lista cuatro tareas, y dos **no estaban en el plan**:
 
 Meta lo pide textualmente **"para enviar mensajes iniciados por la empresa"**. Eso es *exactamente* lo que hace este sistema: todos los avisos los inicia el alojamiento, ninguno es respuesta a un mensaje del huésped.
 
-**Hay que cargar una tarjeta en el portafolio empresarial.** No es opcional ni se puede postergar: sin método de pago no salen los mensajes de producción. Conviene mirar de antemano el precio por conversación de utilidad en Argentina y el cupo gratuito vigente, porque cambian seguido.
+**Hay que cargar una tarjeta.** No es opcional ni se puede postergar: sin método de pago no salen los mensajes de producción.
+
+**Dónde** (relevado el 2026-08-10): `business.facebook.com` → **Configuración del negocio** → **Cuentas** → **Cuentas de WhatsApp** → elegir la WABA → **Configuración de pago** → *Agregar método de pago*.
+
+⚠️ **Va en la WABA real, no en la de prueba.** El método de pago es por cuenta de WhatsApp y acá hay dos (ver *Las plantillas son por WABA, y hay dos*). Cargarlo en la de prueba no habilita nada en producción.
+
+**Qué acepta:** **tarjeta de crédito o débito habilitada para pagos internacionales en USD**. También existe la **línea de crédito** (facturación mensual en vez de débito automático), pensada para cuentas grandes y agencias; para este alojamiento no tiene sentido. La tarjeta queda guardada en el portafolio y se puede reutilizar en otra WABA.
+
+⚠️ **La ubicación del negocio y la divisa se eligen al cargar la tarjeta y NO se pueden cambiar después.** Es el único paso irreversible de todo el trámite: mirarlo dos veces antes de confirmar.
+
+Meta pide **autenticación en dos pasos** (SMS o app) para entrar a la configuración de pago — la misma que destrabó el resto del trámite.
 
 ### 📢 La app está *Sin publicar*
 
@@ -739,7 +749,9 @@ WHATSAPP_ADMIN_PHONE      →  5493434512995        (destinatario)
 
 Afecta solo a los tres avisos internos —reserva nueva, reserva de viajante y recordatorio de pendientes—; **el aviso al huésped nunca estuvo en discusión**: sale por WhatsApp desde el número del alojamiento, y el comprobante sigue llegando a esa conversación.
 
-**Decidido: `WHATSAPP_ADMIN_PHONE` pasa a ser el celular del personal.** Es un número distinto del emisor, así que desaparece el problema del auto-envío. **No hay trabajo de código**: es cambiar la variable en Vercel el día de la migración (paso 7 del runbook). Falta que el dueño pase el número.
+**Decidido: `WHATSAPP_ADMIN_PHONE` pasa a ser el celular del personal, `+54 9 343 428-9399`.** Es un número distinto del emisor, así que desaparece el problema del auto-envío. **No hay trabajo de código**: es cambiar la variable en Vercel el día de la migración (paso 7 del runbook).
+
+El valor exacto a cargar es **`5493434289399`** — la forma que produce `lib/telefono.ts`. La variable se edita a mano, pero igual pasa por `normalizarTelefono()` como red de seguridad antes de llegar a Meta (`lib/whatsapp.ts:23`).
 
 Esa línea **no envía nada**: el emisor sigue siendo el número del alojamiento. Solo recibe los "nueva reserva" y los recordatorios, separados de las conversaciones con huéspedes.
 
