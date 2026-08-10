@@ -731,13 +731,25 @@ WHATSAPP_ADMIN_PHONE      →  5493434512995        (destinatario)
 
 **No sabemos si Meta permite que un número se mande mensajes a sí mismo por la Cloud API.** Se intentó averiguarlo enviando del número de prueba a sí mismo y el resultado fue inconcluso: el chequeo de la lista de destinatarios se ejecuta primero y devuelve `(#131030)` antes de llegar a evaluar el caso. Agregar el número de prueba a su propia lista requeriría un código de verificación a un número de Estados Unidos, inaccesible.
 
+Tampoco se puede adelantar probando con el número real como emisor. Se intentó y la API lo rechaza de entrada:
+
+```
+POST /407269815803738/messages  →  (#133010) Account not registered
+```
+
+Es la prueba dura de que **nada se puede verificar antes del registro por Coexistence**.
+
 **Queda como el primer riesgo a verificar el día de la migración**, cuando desaparece la lista de destinatarios y el escenario se puede probar de verdad. Hay motivos para pensar que puede funcionar —WhatsApp soporta el "mensaje a uno mismo" y con Coexistence el aviso aparecería en la app del dueño— pero es una suposición.
 
-**Si no funciona**, las salidas por orden de menor fricción:
+**Si no funciona, la salida recomendada es una segunda línea prepaga** que reciba los avisos internos.
 
-1. Apuntar `WHATSAPP_ADMIN_PHONE` al celular personal. Es cambiar una variable, pero contradice lo que el dueño quiere.
-2. Usar una segunda línea del negocio como destinataria de los avisos internos.
-3. Sacar el aviso de admin por WhatsApp y apoyarse en el panel.
+Importa entender el rol: esa línea **no envía nada**. El emisor sigue siendo el número del alojamiento, así que el huésped sigue recibiendo desde ahí y los comprobantes siguen llegando a esa misma conversación — que es justamente lo que el dueño quiere. La línea nueva solo recibe los "nueva reserva" y los recordatorios, separados de las conversaciones con huéspedes.
+
+Alcanza con una SIM prepaga; no hace falta otro teléfono si el del dueño acepta dos.
+
+> **Antes de comprar nada**: poner el número de un familiar como `WHATSAPP_ADMIN_PHONE` por unos minutos y confirmar que el aviso llega. Eso descarta que el problema sea otro y recién ahí se compra el chip sabiendo que resuelve.
+
+Descartadas: el celular personal del dueño (no quiere avisos ahí) y sacar el aviso por WhatsApp (perdería la alerta de reserva nueva).
 
 #### Antes de arrancar
 
