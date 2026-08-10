@@ -86,6 +86,27 @@ export async function notificarNuevaReservaAlAdmin(reservaId: string) {
   ]);
 }
 
+/**
+ * La reserva de un viajante frecuente nace CONFIRMADA: no pasa por el panel,
+ * asi que nunca queda PENDIENTE y el recordatorio del cron tampoco la agarra.
+ * Sin este aviso, el dueño podria tener una reserva confirmada y agendada sin
+ * enterarse por WhatsApp.
+ */
+export async function notificarNuevaReservaViajanteAlAdmin(reservaId: string) {
+  const admin = adminPhone();
+  const reserva = await traerReserva(reservaId);
+  if (!admin || !reserva) return;
+
+  await enviarPlantilla(admin, "nueva_reserva_viajante_admin", IDIOMA, [
+    param(reserva.nombreSolicitante, "Sin nombre"),
+    rangoFechas(reserva.fechaInicio, reserva.fechaFin),
+    `${reserva.cantPersonas} persona(s)`,
+    param(reserva.departamento?.nombre, "Sin departamento"),
+    pesos(reserva.precioTotal),
+    `${baseUrl()}/admin/reservas/${reserva.id}`,
+  ]);
+}
+
 export async function notificarReservaConfirmada(reservaId: string) {
   const reserva = await traerReserva(reservaId);
   if (!reserva) return;

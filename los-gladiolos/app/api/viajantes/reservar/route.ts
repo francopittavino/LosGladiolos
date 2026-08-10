@@ -8,7 +8,10 @@ import {
   validarRangoFechas,
 } from "@/lib/reservas";
 import { normalizarCamas } from "@/lib/camas";
-import { notificarViajanteConfirmado } from "@/lib/notificaciones";
+import {
+  notificarNuevaReservaViajanteAlAdmin,
+  notificarViajanteConfirmado,
+} from "@/lib/notificaciones";
 import { crearEventoReserva } from "@/lib/googleCalendar";
 
 export async function POST(request: Request) {
@@ -108,6 +111,7 @@ export async function POST(request: Request) {
   }
 
   await notificarViajanteConfirmado(reserva.id);
+  await notificarNuevaReservaViajanteAlAdmin(reserva.id);
 
   return NextResponse.json(
     {

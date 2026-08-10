@@ -344,7 +344,29 @@ Ahora hay dos: la de prueba (`1815277973155566`) y la real (`403489972840929`). 
 - Las plantillas que se creen en la **WABA de prueba** son las que permiten validar el circuito ahora, pero **no sobreviven a la migración**.
 - Hay que **volver a crearlas en la WABA real** antes de migrar. Los textos y los nombres son idénticos, así que es trabajo mecánico, pero hay que contarlo en el plan.
 
-### Cómo crearlas
+### ✅ Crearlas por la API, no por el formulario
+
+**Es muchísimo mejor camino.** El formulario del Administrador de WhatsApp tiene las tres trampas de más abajo, se degrada con la sesión larga y no deja elegir bien la categoría. Por la Graph API es una sola llamada:
+
+```
+POST https://graph.facebook.com/v25.0/{WABA_ID}/message_templates
+     Authorization: Bearer {ACCESS_TOKEN}
+
+{ "name": "...", "language": "es", "category": "UTILITY",
+  "components": [{ "type": "BODY", "text": "...",
+                   "example": { "body_text": [[ "muestra 1", "muestra 2" ]] } }] }
+```
+
+Ventajas concretas: se elige la categoría explícitamente, **el rechazo llega en el momento** con su motivo (`rejected_reason`), y una plantilla rechazada **se puede editar y reenviar** con `POST /{template_id}` — sin borrarla, así que no se activa el bloqueo de 30 días del nombre.
+
+> Así se creó `nueva_reserva_viajante_admin`. Es también la vía para arreglar la categoría de `reserva_cancelada_admin_motivo` cuando salga de `PENDING`.
+
+Dos reglas que la API hace explícitas y el formulario no:
+
+- **El cuerpo no puede empezar ni terminar con variable, y un punto no alcanza.** Terminar en `... en {{6}}.` se rechaza con *"Las variables no pueden estar al principio ni al final"*. Tiene que haber texto real después.
+- **Meta reclasifica y rechaza al instante con `INCORRECT_CATEGORY`.** El primer intento de `nueva_reserva_viajante_admin` en UTILITY se rechazó; con una redacción más sobria y transaccional —sin encabezado en mayúsculas ni emoji de festejo— pasó. La categoría depende del **tono del texto**, no solo del propósito.
+
+### Cómo crearlas por el formulario
 
 **business.facebook.com** → **Administrador de WhatsApp** → **Plantillas de mensajes** → **Crear plantilla**.
 
@@ -374,7 +396,7 @@ La causa: la pestaña estaba en **segundo plano** (`document.visibilityState ===
 
 **Si esto se automatiza de nuevo, la ventana de Chrome tiene que estar al frente y visible.** Para diagnosticar rápido, en la consola: `document.visibilityState`.
 
-### Estado: las 8 creadas (9/8)
+### Estado: las 9 creadas (9/8)
 
 Todas en la **WABA de prueba**, idioma Spanish (`es`), en revisión:
 
@@ -388,19 +410,21 @@ Todas en la **WABA de prueba**, idioma Spanish (`es`), en revisión:
 | `reserva_cancelada_admin` | Servicio |
 | **`reserva_cancelada_admin_motivo`** | ⚠️ **Marketing** — mal, ver abajo |
 | `recordatorio_pendientes` | Servicio |
+| `nueva_reserva_viajante_admin` | Servicio — creada por la API el 9/8 |
 
 #### 🔧 Pendiente: `reserva_cancelada_admin_motivo` quedó en Marketing
 
 Se creó con la categoría equivocada. **Importa**: los mensajes de Marketing son más caros y, sobre todo, **pueden no entregarse** a quien tenga desactivadas las notificaciones de marketing. Un aviso de cancelación no puede depender de eso.
 
-**La categoría no se puede editar** en una plantilla ya creada: los campos aparecen bloqueados. Y tampoco se puede borrar mientras está en revisión (*"Esta plantilla no se puede eliminar porque está en revisión"*).
+Desde la interfaz no se puede arreglar: la categoría aparece bloqueada y la plantilla tampoco se puede borrar mientras está en revisión.
 
 **Qué hacer cuando termine la revisión:**
 
-1. Mirar en qué categoría quedó. Meta recategoriza durante la revisión, y como el texto es claramente transaccional **es probable que la pase a Servicio sola**. Si es así, no hay nada que hacer.
-2. Si sigue en Marketing: borrarla y recrearla con categoría Servicio. **Ojo**: Meta no deja reutilizar el nombre de una plantilla borrada durante 30 días, así que hay que usar otro — por ejemplo `reserva_cancelada_con_motivo` — y ajustar el nombre en `lib/notificaciones.ts`.
+1. Mirar en qué categoría quedó — Meta recategoriza durante el proceso.
+2. Si sigue en Marketing, **editarla por la API** (ver arriba): `POST /{template_id}` con `"category": "UTILITY"`. No hay que borrarla ni cambiarle el nombre, así que **no aplica el bloqueo de 30 días** y `lib/notificaciones.ts` no se toca.
+3. Si Meta la rechaza con `INCORRECT_CATEGORY`, ajustar el texto a un tono más sobrio —sin encabezado en mayúsculas ni emoji— y reenviar. Fue lo que destrabó `nueva_reserva_viajante_admin`.
 
-### Las 8 plantillas
+### Las 9 plantillas
 
 Los textos salen de los mensajes actuales de `lib/notificaciones.ts`, reordenados para cumplir dos reglas de Meta: **el cuerpo no puede empezar ni terminar con una variable**, y **no puede haber dos variables pegadas**.
 
@@ -485,9 +509,24 @@ Quedamos a disposición por cualquier consulta.
 Entrá a {{2}} para verlas.
 ```
 
+#### 9. `nueva_reserva_viajante_admin` — al admin (6 variables)
+```
+Nueva reserva registrada en Los Gladiolos.
+
+Huésped: {{1}}
+Fechas: {{2}}
+Personas: {{3}}
+Departamento: {{4}}
+Total: {{5}}
+
+Corresponde a un viajante frecuente, por lo que quedó confirmada sin revisión previa. El detalle está en {{6}} y se puede editar desde el panel.
+```
+
+> **Por qué existe.** La reserva de un viajante frecuente nace `CONFIRMADA`: no pasa por el panel, así que nunca queda `PENDIENTE` y el recordatorio del cron tampoco la agarra. Sin este aviso el dueño podía tener una reserva confirmada y agendada **sin enterarse por WhatsApp**. Era un agujero real, detectado el 9/8 al auditar los puntos de llamada.
+
 ### El cambio en el código — ✅ hecho
 
-`lib/notificaciones.ts` ya usa `enviarPlantilla(numero, nombre, "es", [...])` en los siete avisos. Los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API: las 8 coinciden.
+`lib/notificaciones.ts` ya usa `enviarPlantilla(numero, nombre, "es", [...])` en los siete avisos. Los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API: las 9 coinciden.
 
 Tres cosas que salieron al implementarlo:
 
@@ -550,8 +589,8 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 
 **En Meta:**
 - [ ] A.5: agregar el celular del dueño a la lista de destinatarios de prueba
-- [x] ~~Las 8 plantillas creadas~~ — enviadas a revisión el 9/8
-- [ ] Que las 8 queden **aprobadas**
+- [x] ~~Las 9 plantillas creadas~~ — enviadas a revisión el 9/8
+- [ ] Que las 9 queden **aprobadas**
 - [ ] Resolver la categoría de `reserva_cancelada_admin_motivo` (ver Parte C)
 
 **De código:**
@@ -562,7 +601,7 @@ Todos quedan logueados por `lib/whatsapp.ts` con el status y el detalle que devu
 ### Etapa 2 — Migración a los recursos reales
 
 - [ ] Número real dado de alta con **Coexistence**
-- [ ] **Las 8 plantillas recreadas en la WABA real** — no se heredan de la de prueba
+- [ ] **Las 9 plantillas recreadas en la WABA real** — no se heredan de la de prueba
 - [ ] Calendario real compartido con `reservas@los-gladiolos.iam.gserviceaccount.com`
 - [ ] `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738` (el real)
 - [ ] `GOOGLE_CALENDAR_ID` → calendario real
