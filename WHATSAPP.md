@@ -524,6 +524,23 @@ Corresponde a un viajante frecuente, por lo que quedó confirmada sin revisión 
 
 > **Por qué existe.** La reserva de un viajante frecuente nace `CONFIRMADA`: no pasa por el panel, así que nunca queda `PENDIENTE` y el recordatorio del cron tampoco la agarra. Sin este aviso el dueño podía tener una reserva confirmada y agendada **sin enterarse por WhatsApp**. Era un agujero real, detectado el 9/8 al auditar los puntos de llamada.
 
+### ✅ Probado ejecutando el flujo real (2026-08-10)
+
+No alcanza con `tsc` y `next build`: no prueban que crear una reserva siga funcionando. Se levantó `npm run dev` y se ejercitaron los dos caminos contra la base real.
+
+**Crear una reserva**, con el teléfono escrito como lo escribiría un huésped (`0343 15 451-2995`):
+
+- `POST /api/reservas` → `201`, reserva `PENDIENTE` con sus 2 personas.
+- El log muestra `[whatsapp] Error 400 enviando a 5493434512995`. **La normalización funciona en el camino real**, no solo en los casos de prueba.
+- El fallo del envío **no rompe la reserva**: sigue el modo *best effort*.
+- Sin evento de calendario, que es lo correcto: se crea al confirmar, no al reservar.
+
+**El cron**: `{"reservasCanceladasPorSeniaVencida":0,"reservasPendientes":1,"recordatorioEnviado":true}`, con su envío correspondiente.
+
+> Los dos envíos fallaron con `(#131030)`, no con `(#132001)`. O sea que **Meta valida la lista de destinatarios antes que la plantilla**, así que mientras dure ese bloqueo no se puede confirmar por esta vía que las plantillas estén bien. Se confirma con la migración.
+
+Después se borró la reserva de prueba y se limpió `ultimoRecordatorioPendientes`, que el cron había dejado marcado y habría silenciado el próximo aviso real durante 2 horas.
+
 ### El cambio en el código — ✅ hecho
 
 `lib/notificaciones.ts` ya usa `enviarPlantilla(numero, nombre, "es", [...])` en los siete avisos. Los nombres, el orden de las variables y el idioma se verificaron contra Meta por la Graph API: las 9 coinciden.
@@ -620,6 +637,47 @@ Y las plantillas **no se pueden adelantar**: crearlas en la WABA real falla con 
 2. Recién entonces, crear las 9 plantillas en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`, que las copia de la de prueba.
 3. Esperar que aprueben.
 4. Compartir el calendario real con la service account y cambiar las dos variables en Vercel.
+
+---
+
+## Cuánto cuesta y a cuánta gente se le puede escribir
+
+Relevado el 2026-08-09/10.
+
+### Tarifas
+
+Desde julio de 2025 Meta cobra **por mensaje entregado**, según la categoría de la plantilla y el país del destinatario. Para Argentina:
+
+| Categoría | USD por mensaje |
+|---|---|
+| **Utilidad** ← las nueve del sistema | **~$0,026** |
+| Autenticación | ~$0,026 |
+| Marketing | ~$0,062 |
+
+> ⚠️ La cifra sale de una fuente de terceros que cita el tarifario de Meta. La documentación oficial no la publica en el texto: la deja en un CSV y en una calculadora interactiva que necesita JavaScript. **Confirmar en <https://whatsappbusiness.com/es-la/products/platform-pricing/> antes de darla por definitiva.**
+
+**No hay cupo gratuito mensual.** Lo único gratis son las respuestas dentro de las 24 hs desde que el cliente escribe, y **ningún aviso de este sistema entra ahí**: todos los inicia el alojamiento.
+
+Esto vale también para **los avisos que recibe el dueño**: son plantillas a un número argentino y se cobran igual que los del huésped.
+
+### Cuánto sale en la práctica
+
+Una reserva típica son 2 mensajes —aviso al admin + aviso de aprobación al huésped— o sea **unos $0,05**. Con 60 reservas al mes, alrededor de **$4 mensuales**.
+
+> 💡 **El recordatorio de pendientes puede ser el mayor costo.** `app/api/cron/route.ts` lo manda cada `HORAS_ENTRE_RECORDATORIOS` (hoy 2) mientras haya reservas sin revisar. Si el dueño tarda un día en revisar, son 12 mensajes diarios; sostenido, ~$9 al mes **solo en recordatorios**, más que todas las reservas juntas. Si molesta, se sube esa constante.
+
+### Cuánta gente
+
+**Coexistence no limita destinatarios**: no anula los límites de la cuenta ni agrega uno propio. El tope real lo pone el **nivel de mensajería (tier)**, que se consulta por la API:
+
+```
+número de prueba   TIER_250   calidad GREEN     CLOUD_API    CONNECTED
+número real        sin tier   calidad UNKNOWN   ON_PREMISE   DISCONNECTED
+```
+
+`TIER_250` = **250 clientes distintos por cada 24 horas**. Sube solo según calidad y volumen; con la verificación de negocio salta directo a 100.000.
+
+**Para este alojamiento no es una restricción real**: con 4 departamentos el techo son ~4 reservas nuevas por día, dos órdenes de magnitud por debajo del límite.
 
 ---
 
