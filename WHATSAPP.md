@@ -718,6 +718,21 @@ Se puede saltear. Vale la pena volver sobre esto solo si más adelante se quiere
 
 Pensado para que **el sistema nunca quede peor que hoy**. La clave es no tocar la variable de Vercel hasta que las plantillas de la WABA real estén aprobadas: mientras tanto la app sigue apuntando al número de prueba y no cambia nada.
 
+#### ⚠️ Decisión previa: el número que recibe los avisos de admin
+
+Hoy `WHATSAPP_ADMIN_PHONE` es `5493434512995`, **el mismo número del alojamiento** que después de migrar va a ser el que envía:
+
+```
+WHATSAPP_PHONE_NUMBER_ID  →  +54 9 343 451-2995   (emisor, tras migrar)
+WHATSAPP_ADMIN_PHONE      →  5493434512995        (destinatario)
+```
+
+Es el mismo número mandándose mensajes a sí mismo. **Muy probablemente Meta lo rechace** —la Cloud API no contempla ese caso— y, aunque lo aceptara, con Coexistence esos avisos aparecerían en la propia app de WhatsApp Business del dueño como una conversación del negocio consigo mismo.
+
+**Hay que apuntar `WHATSAPP_ADMIN_PHONE` a un número distinto del emisor.** El candidato natural es el celular personal del dueño, que en este documento figura como `3435074866` → `5493435074866`.
+
+Es una variable más a cambiar en Vercel el día de la migración. Conviene decidirlo antes.
+
 #### Antes de arrancar
 
 - [ ] Las 9 plantillas **aprobadas en la WABA de prueba**. No es un requisito técnico, pero si alguna se rechaza conviene corregir el texto antes de recrearlas del otro lado.
@@ -747,6 +762,7 @@ Pensado para que **el sistema nunca quede peor que hoy**. La clave es no tocar l
 7. En Vercel, cambiar y **redeployar**:
    - `WHATSAPP_PHONE_NUMBER_ID` → `407269815803738`
    - `GOOGLE_CALENDAR_ID` → calendario real
+   - `WHATSAPP_ADMIN_PHONE` → el celular **personal**, no el del alojamiento (ver la decisión previa)
 
 #### Fase 3 — Verificar, en este orden
 
