@@ -105,8 +105,7 @@ tocaron. Mirá `git log` para el tono.
 - **Sin acentos ni eñes en el mensaje de commit** — es la convención del repo.
 - Cerrar con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
 
-Usá un here-string de PowerShell (`@'...'@`, con el cierre en la columna 0) para
-los mensajes de varias líneas.
+⚠️ **Escribí el mensaje en un archivo del scratchpad y commiteá con `git commit -F <archivo>`.** Un here-string de PowerShell (`@'...'@`) sirve solo mientras el mensaje no tenga comillas dobles: PowerShell 5.1 re-tokeniza al pasarle el argumento a un ejecutable nativo, el mensaje se parte y git falla con `pathspec '...' did not match any file(s)`. Como los mensajes de este repo suelen citar textualmente un error de Meta, pasa seguido. Con `-F` no pasa nunca.
 
 **No pushear** salvo que el usuario lo pida.
 
