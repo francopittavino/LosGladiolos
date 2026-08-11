@@ -3,21 +3,22 @@
 > **Documento maestro de contexto del proyecto.**
 > Cualquier modelo de IA que trabaje en este proyecto debe leer este archivo primero.
 >
-> **Última actualización:** 2026-08-10 — se cerró la decisión de los avisos internos; solo faltan trámites de Meta.
+> **Última actualización:** 2026-08-11 — falta un solo trámite: el Coexistence del número real.
 > **Ver también:** `WHATSAPP.md` (lo único que falta del sistema), `CREDENTIALS.md` (estado de cuentas) y `RESTAURACION.md` (registro de la restauración del 7/8).
 
 ---
 
-## ⏸️ Dónde retomar — última sesión: 2026-08-10
+## ⏸️ Dónde retomar — última sesión: 2026-08-11
 
-**El sistema está completo y funcionando. Falta solamente WhatsApp, y del lado del código ya no queda nada.**
+**El sistema está completo y funcionando. Falta un solo trámite: el Coexistence del número real. Del lado del código no queda nada.**
 
 ### 👉 Lo primero que va a pasar
 
-**Ya no queda ninguna decisión pendiente: lo único que falta son dos trámites en Meta, y los tiene que hacer el dueño.** En este orden, porque el segundo depende del primero:
+**El Coexistence, que quedó agendado para la tarde del 11/8 o la mañana del 12/8**, cuando el dueño tenga el celular a mano. Todo lo previo ya está verificado y en verde.
 
-1. **Cargar el método de pago** en la **WABA real** (no en la de prueba). `business.facebook.com` → Configuración del negocio → Cuentas → Cuentas de WhatsApp → elegir la cuenta → Configuración de pago. Pide una tarjeta habilitada para pagos internacionales en USD. ⚠️ La ubicación del negocio y la divisa se eligen ahí y **no se pueden cambiar después**.
-2. **Hacer el registro por Coexistence** del número real, con el celular en la mano y WhatsApp Business abierto.
+Se lanza desde: `developers.facebook.com` → *Los Gladiolos Reservas* → **Casos de uso** → *Conectar en WhatsApp* → **Paso 2. Configuración de producción** → desplegar *Registrar tu número de teléfono de WhatsApp* → botón **"Añadir número nuevo"**.
+
+> ⚠️ **No se puede hacer en diferido ni por partes.** El código de verificación llega durante el flujo y expira en minutos; si vence, se reinicia todo. Y además del código, el Coexistence pide **escanear un QR con la app de WhatsApp Business** para vincular la Cloud API como dispositivo enlazado. Hace falta el dueño presente, con el celular desbloqueado, los ~5 minutos que dura. Un modelo puede manejar el navegador, pero no puede escanear el QR ni recibir el código.
 
 Apenas eso esté hecho, lo que sigue se hace por API y sin navegador:
 
@@ -27,6 +28,19 @@ npx tsx scripts/clonar-plantillas.ts --confirmar  # crea las 9 en la WABA real
 ```
 
 El runbook completo del día de la migración —con las verificaciones y la vuelta atrás— está en `WHATSAPP.md`.
+
+### Avances del 11/8 — todo lo previo al Coexistence quedó verificado
+
+Se relevó el estado real contra la Graph API y el navegador, y **no queda ningún bloqueo salvo el trámite en sí**:
+
+| Qué | Estado |
+|---|---|
+| Método de pago | ✅ **MasterCard ···· 2840** en la WABA **real** (`403489972840929`) |
+| Las 9 plantillas | ✅ **Aprobadas** en la WABA de prueba |
+| Número real | 🔴 `ON_PREMISE` / `NOT_VERIFIED` — falta el Coexistence |
+| WABA real | 🔴 0 plantillas (bloqueado hasta el Coexistence) |
+
+**El pendiente de `reserva_cancelada_admin_motivo` se puede tachar.** Sigue en MARKETING y Meta no la recategorizó sola, pero da igual: `scripts/clonar-plantillas.ts:24` fuerza `CATEGORIA = "UTILITY"` para todas al crearlas en la WABA real, así que la categoría mala no se arrastra. No hay que editar nada. Conviene igual mirar la categoría que devuelve Meta al crearlas, porque puede reclasificar.
 
 ### Avances del 10/8 — se cerró lo último que estaba abierto
 
@@ -67,13 +81,13 @@ Se evaluó mandarlos a un **grupo de WhatsApp con todos los empleados** y **no s
 
 ### Lo próximo
 
-1. **Esperar la aprobación de las 9 plantillas.** No está en el camino crítico: solo valida que la redacción y las categorías pasan revisión antes de recrearlas en la WABA real.
-2. **Revisar `reserva_cancelada_admin_motivo`**, que quedó con categoría Marketing en vez de Utilidad. Si Meta no la recategoriza sola, se corrige **editándola por la Graph API** (`POST /{template_id}` con `"category": "UTILITY"`), sin borrarla ni cambiarle el nombre.
-3. **Migrar al número real**, que es el cuello de botella de todo lo que queda.
+**Ya no hay nada en paralelo: todo lo que queda cuelga del Coexistence.**
 
-   El número real figura como **`ON_PREMISE`**: nunca se incorporó a la Cloud API. Hasta que eso no pase no se puede enviar desde él **ni crear las plantillas en la WABA real** — Meta lo bloquea con *"esta cuenta no tiene permiso para crear ni actualizar plantillas"*. Nada de esto se puede adelantar.
+1. **El Coexistence del número real**, que es el cuello de botella de todo lo demás y lo tiene que hacer el dueño.
 
-   Son dos trámites del dueño: **cargar el método de pago** y el registro por **Coexistence** (Embedded Signup, con el celular en la mano). Después de eso: crear las 9 plantillas con `scripts/clonar-plantillas.ts`, esperar aprobación, compartir el calendario real y cambiar las tres variables (`WHATSAPP_PHONE_NUMBER_ID`, `GOOGLE_CALENDAR_ID` y `WHATSAPP_ADMIN_PHONE`).
+   El número figura como **`ON_PREMISE`**: nunca se incorporó a la Cloud API. Hasta que eso no pase no se puede enviar desde él **ni crear las plantillas en la WABA real** — Meta lo bloquea con *"esta cuenta no tiene permiso para crear ni actualizar plantillas"*. Nada de esto se puede adelantar.
+
+2. Después, todo por API: crear las 9 plantillas con `scripts/clonar-plantillas.ts`, esperar aprobación, compartir el calendario real y cambiar las tres variables (`WHATSAPP_PHONE_NUMBER_ID`, `GOOGLE_CALENDAR_ID` y `WHATSAPP_ADMIN_PHONE`).
 
 > Con el número de prueba **no se puede validar el flujo de punta a punta**, por el bug de la lista de destinatarios. La entrega en sí ya está probada y funciona.
 
@@ -92,6 +106,9 @@ Se evaluó mandarlos a un **grupo de WhatsApp con todos los empleados** y **no s
 - **No existe un número de prueba de Meta**: aparece recién al crear la app de desarrollador. Lo que hay conectado es el número real de la empresa.
 - Las variables `sensitive` de Vercel **no se pueden leer de vuelta**. Nunca.
 - **La Cloud API no envía mensajes a grupos de WhatsApp.** `to` solo acepta un número individual; no hay endpoint de grupos y no lo destraba ninguna verificación.
+- **El checklist del Paso 2 en el Developer Console miente sobre el método de pago.** Muestra *"Añade un método de pago"* sin tildar aunque la tarjeta esté cargada, porque esa pantalla está scopeada a la WABA de **prueba**. La fuente de verdad es Facturación y pagos → Cuentas → *Cuentas de WhatsApp*, que lista las dos WABA con su tarjeta.
+- **El botón "Añadir número de teléfono" del Administrador de WhatsApp está deshabilitado en la WABA real, y está bien así.** El número ya está ahí, solo que como `ON_PREMISE`: no hay que añadirlo, hay que migrarlo. El flujo va por el Paso 2 del Developer Console, no por ahí.
+- **El Coexistence no se puede hacer en diferido ni delegar en un modelo.** El código de verificación expira en minutos y además hay que escanear un QR con la app de WhatsApp Business. Requiere al dueño presente con el celular.
 
 ---
 
