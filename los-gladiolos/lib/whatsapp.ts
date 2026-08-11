@@ -2,12 +2,27 @@ import "server-only";
 import { normalizarTelefono } from "@/lib/telefono";
 
 const API_VERSION = "v25.0";
+const API_BASE_URL_DEFECTO = `https://graph.facebook.com/${API_VERSION}`;
 
+/**
+ * El host sale de una variable para poder cambiar de proveedor sin tocar
+ * codigo. Coexistence —que el numero ande a la vez en el celular del dueno y
+ * en la Cloud API— solo la habilita un proveedor autorizado, asi que el alta
+ * del numero real pasa por uno.
+ *
+ * Con Dualhook la WABA queda en nuestro portafolio y Meta entrega directo, o
+ * sea que el default sirve tal cual y solo cambian el token y el phoneNumberId.
+ *
+ * OJO si alguna vez se migra a 360dialog: ademas del host, ellos omiten el
+ * phoneNumberId de la ruta y autentican con el header D360-API-KEY en lugar de
+ * Bearer. Eso si obliga a tocar enviar().
+ */
 function getConfig() {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneNumberId) return null;
-  return { token, phoneNumberId };
+  const baseUrl = (process.env.WHATSAPP_API_BASE_URL || API_BASE_URL_DEFECTO).replace(/\/+$/, "");
+  return { token, phoneNumberId, baseUrl };
 }
 
 export function whatsappConfigurado(): boolean {
@@ -33,7 +48,7 @@ async function enviar(payload: Record<string, unknown>, destino: string) {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/${API_VERSION}/${cfg.phoneNumberId}/messages`,
+      `${cfg.baseUrl}/${cfg.phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
