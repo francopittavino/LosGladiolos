@@ -781,7 +781,7 @@ Era la preferencia del dueño —un grupo con todos los empleados— y **la Clou
 
 #### Fase 1 — Preparar (no afecta a producción)
 
-1. **Cargar el método de pago** en el portafolio empresarial.
+1. **Cargar el método de pago en la WABA real** — no en la de prueba. Ver *El método de pago* más arriba: la divisa se elige acá y no se cambia después.
 2. **Registrar el número real** con Coexistence, desde *Paso 2. Configuración de producción*. Incluye verificarlo con un código.
 3. **Comprobar que cambió de plataforma**:
    ```
@@ -825,7 +825,7 @@ Lo único que no tiene vuelta atrás simple es el registro del número en la Clo
 
 ### El orden
 
-1. **Método de pago** en el portafolio empresarial.
+1. **Método de pago** en la WABA real.
 2. **Registrar el número real** (`+54 9 343 451-2995`) con **Coexistence**. Requisitos: el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y hay que verificarlo con un código — hoy figura `code_verification_status: NOT_VERIFIED`. Al terminar, `platform_type` tiene que pasar de `ON_PREMISE` a `CLOUD_API`; se comprueba con `scripts/verificar-whatsapp.ts`.
 3. **Crear las 9 plantillas** en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`. Recién funciona después del paso 2.
 4. **Esperar la aprobación** de las 9.
