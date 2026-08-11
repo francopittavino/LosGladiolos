@@ -3,7 +3,7 @@
 > **Documento maestro de contexto del proyecto.**
 > Cualquier modelo de IA que trabaje en este proyecto debe leer este archivo primero.
 >
-> **Última actualización:** 2026-08-07 — auditoría completa + recuperación del código perdido.
+> **Última actualización:** 2026-08-10 — se cerró la decisión de los avisos internos; solo faltan trámites de Meta.
 > **Ver también:** `WHATSAPP.md` (lo único que falta del sistema), `CREDENTIALS.md` (estado de cuentas) y `RESTAURACION.md` (registro de la restauración del 7/8).
 
 ---
@@ -14,10 +14,10 @@
 
 ### 👉 Lo primero que va a pasar
 
-El dueño quedó en, al día siguiente:
+**Ya no queda ninguna decisión pendiente: lo único que falta son dos trámites en Meta, y los tiene que hacer el dueño.** En este orden, porque el segundo depende del primero:
 
-1. **Hablar con el cliente** para cerrar la decisión abierta de más abajo.
-2. **Hacer el registro por Coexistence** del número real.
+1. **Cargar el método de pago** en la **WABA real** (no en la de prueba). `business.facebook.com` → Configuración del negocio → Cuentas → Cuentas de WhatsApp → elegir la cuenta → Configuración de pago. Pide una tarjeta habilitada para pagos internacionales en USD. ⚠️ La ubicación del negocio y la divisa se eligen ahí y **no se pueden cambiar después**.
+2. **Hacer el registro por Coexistence** del número real, con el celular en la mano y WhatsApp Business abierto.
 
 Apenas eso esté hecho, lo que sigue se hace por API y sin navegador:
 
@@ -27,6 +27,14 @@ npx tsx scripts/clonar-plantillas.ts --confirmar  # crea las 9 en la WABA real
 ```
 
 El runbook completo del día de la migración —con las verificaciones y la vuelta atrás— está en `WHATSAPP.md`.
+
+### Avances del 10/8 — se cerró lo último que estaba abierto
+
+Quedó resuelta la decisión de los avisos internos (abajo) y se relevó **dónde y cómo se carga el método de pago**, que era el requisito que faltaba y del que no se sabía la ruta. El detalle está en `WHATSAPP.md`.
+
+Nada de esto tocó código: el sistema sigue como quedó el 9/8.
+
+También se agregó `.claude/skills/closesesion/`, el par de `opensesion`. **Convención nueva del proyecto: durante la sesión no se actualizan los documentos maestros ni se commitea; el registro se hace todo junto al cerrar con `/closesesion`.** Encontrar cambios sin commitear al arrancar es normal, no una anomalía.
 
 ### Avances del 9/8 — toda la configuración de Meta quedó lista
 
@@ -65,18 +73,18 @@ Se evaluó mandarlos a un **grupo de WhatsApp con todos los empleados** y **no s
 
    El número real figura como **`ON_PREMISE`**: nunca se incorporó a la Cloud API. Hasta que eso no pase no se puede enviar desde él **ni crear las plantillas en la WABA real** — Meta lo bloquea con *"esta cuenta no tiene permiso para crear ni actualizar plantillas"*. Nada de esto se puede adelantar.
 
-   El trámite es el registro por **Coexistence** (Embedded Signup, con el celular en la mano). Lo tiene que hacer el dueño. Después de eso: crear las 9 plantillas con `scripts/clonar-plantillas.ts`, esperar aprobación, compartir el calendario real y cambiar las dos variables.
+   Son dos trámites del dueño: **cargar el método de pago** y el registro por **Coexistence** (Embedded Signup, con el celular en la mano). Después de eso: crear las 9 plantillas con `scripts/clonar-plantillas.ts`, esperar aprobación, compartir el calendario real y cambiar las tres variables (`WHATSAPP_PHONE_NUMBER_ID`, `GOOGLE_CALENDAR_ID` y `WHATSAPP_ADMIN_PHONE`).
 
 > Con el número de prueba **no se puede validar el flujo de punta a punta**, por el bug de la lista de destinatarios. La entrega en sí ya está probada y funciona.
 
 
 
-### Pendientes sueltos del 7/8
+### Pendientes sueltos
 
 - [ ] **Revocar el token de Vercel** creado para la restauración → vercel.com/account/tokens
 - [ ] **Borrar `C:\Users\franc\Downloads\los-gladiolos-*.json`** (clave privada de Google) después de guardarla en un gestor de contraseñas
-- [ ] **Cargar los datos bancarios** en `/admin/configuracion` — el campo ya existe y funciona
 - [ ] Decidir si el repositorio de GitHub queda público o pasa a privado
+- [x] ~~Cargar los datos bancarios en `/admin/configuracion`~~ — hecho el 9/8
 
 ### Lo que NO hay que volver a investigar
 
