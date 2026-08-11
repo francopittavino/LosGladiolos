@@ -49,6 +49,21 @@ El número que se conecte a la Cloud API deja de funcionar en la app de WhatsApp
 
 Esto aplica solo a la migración final: el número de prueba de Meta no lo necesita. Al momento de hacerlo, verificar los requisitos vigentes — el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y el alta se hace por el flujo de Embedded Signup con coexistencia habilitada.
 
+#### Dónde se lanza (relevado el 11/8)
+
+`developers.facebook.com` → *Los Gladiolos Reservas* → **Casos de uso** → *Conectar en WhatsApp* → **Paso 2. Configuración de producción** → desplegar *Registrar tu número de teléfono de WhatsApp* → botón **"Añadir número nuevo"**.
+
+**No es por el Administrador de WhatsApp.** Ahí el botón *"Añadir número de teléfono"* aparece deshabilitado en la WABA real, y está bien: el número ya figura en esa WABA como `ON_PREMISE`. No hay que añadirlo, hay que migrarlo.
+
+#### ⚠️ Hace falta el dueño presente, con el celular
+
+**No se puede hacer en diferido ni por partes, ni delegarlo en un modelo.** Dos motivos:
+
+1. El **código de verificación** llega durante el flujo y expira en minutos. Si vence, se reinicia todo. No se puede dejar configurado y retomar después.
+2. Además del código, la coexistencia pide **escanear un QR con la app de WhatsApp Business**, para vincular la Cloud API como dispositivo enlazado. Es la app del teléfono leyendo la pantalla: no hay forma de pasarlo por chat.
+
+Un modelo puede manejar el navegador y dejar todo posicionado, pero el trámite necesita al dueño con el celular desbloqueado los ~5 minutos que dura.
+
 ---
 
 ## El formato del teléfono del huésped
@@ -398,7 +413,7 @@ La causa: la pestaña estaba en **segundo plano** (`document.visibilityState ===
 
 ### Estado: las 9 creadas (9/8)
 
-Todas en la **WABA de prueba**, idioma Spanish (`es`), en revisión:
+Todas en la **WABA de prueba**, idioma Spanish (`es`). **Las nueve quedaron `APPROVED`** — confirmado por la Graph API el 11/8:
 
 | Plantilla | Categoría |
 |---|---|
@@ -412,17 +427,16 @@ Todas en la **WABA de prueba**, idioma Spanish (`es`), en revisión:
 | `recordatorio_pendientes` | Servicio |
 | `nueva_reserva_viajante_admin` | Servicio — creada por la API el 9/8 |
 
-#### 🔧 Pendiente: `reserva_cancelada_admin_motivo` quedó en Marketing
+#### ✅ Cerrado (11/8): `reserva_cancelada_admin_motivo` quedó en Marketing y no importa
 
-Se creó con la categoría equivocada. **Importa**: los mensajes de Marketing son más caros y, sobre todo, **pueden no entregarse** a quien tenga desactivadas las notificaciones de marketing. Un aviso de cancelación no puede depender de eso.
+Se creó con la categoría equivocada, y **Meta no la recategorizó**: terminó la revisión y sigue en `MARKETING`. Importaba porque los mensajes de Marketing son más caros y **pueden no entregarse** a quien tenga desactivadas esas notificaciones — un aviso de cancelación no puede depender de eso.
 
-Desde la interfaz no se puede arreglar: la categoría aparece bloqueada y la plantilla tampoco se puede borrar mientras está en revisión.
+**No hay que hacer nada.** La plantilla mal categorizada vive en la WABA de **prueba**, que no sobrevive a la migración, y `scripts/clonar-plantillas.ts:24` fuerza `CATEGORIA = "UTILITY"` para las nueve al recrearlas en la WABA real. La categoría mala no se arrastra.
 
-**Qué hacer cuando termine la revisión:**
+**Sí conviene mirar la salida del clonado**, que imprime la categoría que devolvió Meta por cada plantilla. Si alguna vuelve como `MARKETING`:
 
-1. Mirar en qué categoría quedó — Meta recategoriza durante el proceso.
-2. Si sigue en Marketing, **editarla por la API** (ver arriba): `POST /{template_id}` con `"category": "UTILITY"`. No hay que borrarla ni cambiarle el nombre, así que **no aplica el bloqueo de 30 días** y `lib/notificaciones.ts` no se toca.
-3. Si Meta la rechaza con `INCORRECT_CATEGORY`, ajustar el texto a un tono más sobrio —sin encabezado en mayúsculas ni emoji— y reenviar. Fue lo que destrabó `nueva_reserva_viajante_admin`.
+1. **Editarla por la API** (ver arriba): `POST /{template_id}` con `"category": "UTILITY"`. No hay que borrarla ni cambiarle el nombre, así que **no aplica el bloqueo de 30 días** y `lib/notificaciones.ts` no se toca.
+2. Si Meta la rechaza con `INCORRECT_CATEGORY`, ajustar el texto a un tono más sobrio —sin encabezado en mayúsculas ni emoji— y reenviar. Fue lo que destrabó `nueva_reserva_viajante_admin`.
 
 ### Las 9 plantillas
 
@@ -694,7 +708,15 @@ Meta lista cuatro tareas, y dos **no estaban en el plan**:
 | 3 | **Añadir un método de pago** | ⚠️ **nuevo** |
 | 4 | Enviar un mensaje | La prueba final |
 
-### 💳 El método de pago — el requisito que faltaba
+### 💳 El método de pago — ✅ cargado el 11/8
+
+**Resuelto: `Los Gladiolos Alojamiento` (`403489972840929`, la WABA real) tiene una MasterCard ···· 2840.** La WABA de prueba sigue sin método de pago, y así está bien.
+
+> ⚠️ **El checklist del Paso 2 en el Developer Console dice que falta, y miente.** Muestra *"Añade un método de pago"* con el círculo vacío porque esa pantalla está scopeada a la WABA de **prueba**. No hay que volver a cargar nada. La fuente de verdad es **Facturación y pagos → Cuentas → pestaña *Cuentas de WhatsApp***, que lista las dos WABA con su tarjeta al lado.
+
+Lo de abajo queda como referencia de cómo se hizo.
+
+
 
 Meta lo pide textualmente **"para enviar mensajes iniciados por la empresa"**. Eso es *exactamente* lo que hace este sistema: todos los avisos los inicia el alojamiento, ninguno es respuesta a un mensaje del huésped.
 
@@ -774,14 +796,14 @@ Era la preferencia del dueño —un grupo con todos los empleados— y **la Clou
 
 #### Antes de arrancar
 
-- [ ] Las 9 plantillas **aprobadas en la WABA de prueba**. No es un requisito técnico, pero si alguna se rechaza conviene corregir el texto antes de recrearlas del otro lado.
+- [x] Las 9 plantillas **aprobadas en la WABA de prueba** — ✅ las nueve `APPROVED` al 11/8.
 - [ ] **Cero reservas activas** en la base: `npx tsx prisma/auditar-telefonos.ts` lo dice. Ver la nota del calendario más abajo.
 - [ ] Día de semana, a la mañana, con margen para reaccionar. **Nunca un viernes ni antes de un fin de semana largo.**
 - [ ] El celular con la app de **WhatsApp Business** a mano.
 
 #### Fase 1 — Preparar (no afecta a producción)
 
-1. **Cargar el método de pago en la WABA real** — no en la de prueba. Ver *El método de pago* más arriba: la divisa se elige acá y no se cambia después.
+1. ~~**Cargar el método de pago en la WABA real.**~~ ✅ **Hecho el 11/8** — MasterCard ···· 2840.
 2. **Registrar el número real** con Coexistence, desde *Paso 2. Configuración de producción*. Incluye verificarlo con un código.
 3. **Comprobar que cambió de plataforma**:
    ```
@@ -825,7 +847,7 @@ Lo único que no tiene vuelta atrás simple es el registro del número en la Clo
 
 ### El orden
 
-1. **Método de pago** en la WABA real.
+1. ~~**Método de pago** en la WABA real.~~ ✅ hecho el 11/8.
 2. **Registrar el número real** (`+54 9 343 451-2995`) con **Coexistence**. Requisitos: el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y hay que verificarlo con un código — hoy figura `code_verification_status: NOT_VERIFIED`. Al terminar, `platform_type` tiene que pasar de `ON_PREMISE` a `CLOUD_API`; se comprueba con `scripts/verificar-whatsapp.ts`.
 3. **Crear las 9 plantillas** en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`. Recién funciona después del paso 2.
 4. **Esperar la aprobación** de las 9.
