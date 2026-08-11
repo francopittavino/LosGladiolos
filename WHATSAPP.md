@@ -43,26 +43,63 @@ Se había marcado como el trámite urgente, porque para conectar un número prop
 
 business.facebook.com → Configuración del negocio → **Centro de seguridad** → Verificación del negocio.
 
-### Coexistence
+### Coexistence — 🔴 no es self-service (relevado el 2026-08-11)
 
-El número que se conecte a la Cloud API deja de funcionar en la app de WhatsApp Business del celular, salvo que se active Coexistence. **Decidido: se usa Coexistence**, para que el dueño siga atendiendo a mano desde el mismo número.
+El número que se conecte a la Cloud API deja de funcionar en la app de WhatsApp Business del celular, salvo que se active Coexistence. **Se usa Coexistence**, para que el dueño siga atendiendo a mano desde el mismo número. Eso no cambió; lo que cambió es cómo se consigue.
 
-Esto aplica solo a la migración final: el número de prueba de Meta no lo necesita. Al momento de hacerlo, verificar los requisitos vigentes — el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y el alta se hace por el flujo de Embedded Signup con coexistencia habilitada.
+> ⚠️ **Un negocio directo NO puede darse de alta Coexistence por su cuenta.** La documentación de Meta lo dice textual: *"You must already be a Solution Partner or Tech Provider."* La única vía es a través de un proveedor autorizado.
 
-#### Dónde se lanza (relevado el 11/8)
+#### La ruta que este documento indicaba estaba equivocada
 
-`developers.facebook.com` → *Los Gladiolos Reservas* → **Casos de uso** → *Conectar en WhatsApp* → **Paso 2. Configuración de producción** → desplegar *Registrar tu número de teléfono de WhatsApp* → botón **"Añadir número nuevo"**.
+Decía que se lanzaba desde *Casos de uso → Paso 2 → Registrar tu número → **Añadir número nuevo***. **Se recorrió el 11/8 y no es.** Ese botón abre un asistente de tres pasos —*Perfil de WA Business* → *Añadir número* → *Verificar número*— que:
 
-**No es por el Administrador de WhatsApp.** Ahí el botón *"Añadir número de teléfono"* aparece deshabilitado en la WABA real, y está bien: el número ya figura en esa WABA como `ON_PREMISE`. No hay que añadirlo, hay que migrarlo.
+- **no tiene ningún paso de QR ni opción de coexistencia**; verifica por SMS o llamada y nada más;
+- **está scopeado a la WABA de prueba**, la misma razón por la que miente sobre el método de pago. Completarlo habría metido el número real en la WABA equivocada **y** sin coexistencia.
 
-#### ⚠️ Hace falta el dueño presente, con el celular
+Se abandonó el asistente antes de verificar: no se registró nada. El perfil real de la WABA buena ya se llama `Los Gladiolos Alojamiento`, otra señal de que el asistente iba a crear algo aparte.
 
-**No se puede hacer en diferido ni por partes, ni delegarlo en un modelo.** Dos motivos:
+**Tampoco es por el Administrador de WhatsApp.** Ahí el botón *"Añadir número de teléfono"* está deshabilitado en la WABA real, y el panel del número solo permite editar el perfil. No hay opción de migrar en ninguna de las dos consolas.
 
-1. El **código de verificación** llega durante el flujo y expira en minutos. Si vence, se reinicia todo. No se puede dejar configurado y retomar después.
-2. Además del código, la coexistencia pide **escanear un QR con la app de WhatsApp Business**, para vincular la Cloud API como dispositivo enlazado. Es la app del teléfono leyendo la pantalla: no hay forma de pasarlo por chat.
+#### El mecanismo real
 
-Un modelo puede manejar el navegador y dejar todo posicionado, pero el trámite necesita al dueño con el celular desbloqueado los ~5 minutos que dura.
+Va por **Embedded Signup con coexistencia habilitada**, que es un flujo que implementa el proveedor, no una pantalla de administración. Según la documentación de Meta el dueño: ingresa su número → recibe un código por WhatsApp desde la cuenta oficial de Facebook Business → toca **"Conectar"** en ese mensaje → confirma si comparte el historial → pega el código. **Ojo: la doc oficial describe código + botón, no necesariamente el QR** que este documento daba por seguro.
+
+Requisitos y límites que aparecieron:
+
+- El celular tiene que tener **WhatsApp Business 2.24.17 o superior**. Es lo primero a verificar, y es gratis.
+- Tras el alta hay **24 horas para sincronizar el historial**, o hay que rehacer el flujo.
+- El número queda con un tope fijo de **20 mensajes por segundo**, para mantener compatibilidad con la app.
+
+Sigue haciendo falta **el dueño presente con el celular** los minutos que dura: el código expira y hay que tocar botones en la app.
+
+#### Si alguna vez se evaluara ser Tech Provider
+
+Se descartó por desproporcionado, pero queda anotado para no volver a averiguarlo: verificación de empresa (en Argentina, CUIT y constancia de ARCA, estatuto social y domicilio fiscal, que Meta advierte que puede tardar **semanas**), revisión de la app con **dos videos de demostración** y justificación escrita para el acceso avanzado a `whatsapp_business_management` y `whatsapp_business_messaging`, 2FA, más implementar el Embedded Signup con session logging y tres webhooks nuevos (`history`, `smb_app_state_sync`, `smb_message_echoes`). Todo eso para ahorrar un abono de USD 12/mes. Además la propia doc aclara que el marco es para dar de alta números **de clientes**, no el propio.
+
+### Proveedores evaluados y la elección (2026-08-11)
+
+**Elegido: Dualhook, USD 12/mes.** No apareció nada más barato con Coexistence; es el piso del mercado.
+
+| Proveedor | Mensual | Coexistence | Nota |
+|---|---|---|---|
+| **Dualhook** | USD 12 | Sí | WABA queda en nuestro portafolio, Meta entrega webhooks directo. No es plataforma de bandeja de entrada |
+| 360dialog | EUR 49 | Sí | Consolidado. Endpoint propio `waba-v2.360dialog.io` compatible con Cloud API |
+| WATI | USD 59 | Sí | Incluye panel de atención que acá sobra |
+| Twilio | USD 0,005/msj | **No** | Sería el más barato para este volumen, pero **no soporta Coexistence** |
+
+Se eligió Dualhook por arquitectura, no por precio: **no proxean los mensajes**, la WABA queda bajo nuestro portafolio y Meta entrega directo al servidor. Si dejaran de operar, el número y la cuenta siguen siendo nuestros y se re-contrata a otro — el daño posible está acotado. Eso compensa que sea una empresa chica: **tiene una sola reseña independiente en G2** y casi toda su información la publica ella misma. Si la prueba no convence, 360dialog es la alternativa con trayectoria por 4× el precio.
+
+**Tienen 14 días de prueba gratis y alta self-service**, así que la verificación no depende de creerles: se prueba con el número real antes de pagar. Contacto: `contact@dualhook.com`.
+
+### 🚫 Evolution API — evaluado y descartado
+
+Resuelve el requisito funcional (se vincula por QR como dispositivo enlazado, el dueño conserva la app, manda texto libre sin plantillas ni ventana de 24hs) y el proyecto es serio: 9.3k estrellas, desarrollo activo. **Se descartó igual**, por tres motivos:
+
+1. **Viola los términos de WhatsApp.** Usa Baileys, que emula WhatsApp Web. La sanción documentada es baneo **permanente sin apelación**, y desde enero de 2026 Meta endureció la detección. El peor caso es perder el número — peor que no hacer nada.
+2. **Estabilidad.** El issue tracker del propio proyecto tiene problemas abiertos y recurrentes: bucles infinitos de reconexión del QR, sesiones trabadas en *"logging in"*, `device_removed`, sincronización infinita. Cuando cae, **hay que volver a escanear el QR con el celular del dueño** — el problema de coordinación de hoy, pero repetido.
+3. **No ahorra.** Vercel no puede alojarlo: necesita VPS con Docker, PostgreSQL, Redis y volumen persistente, o sea USD 5–10/mes. Contra los USD 12 de Dualhook el ahorro es nulo, y encima habría que reescribir `lib/whatsapp.ts` y tirar las 9 plantillas.
+
+El dueño ofreció asumir el riesgo de baneo; se descartó igual por los puntos 2 y 3, que no son de riesgo sino de costo y confiabilidad.
 
 ---
 
@@ -704,7 +741,7 @@ Meta lista cuatro tareas, y dos **no estaban en el plan**:
 | # | Tarea | Estado |
 |---|---|---|
 | 1 | Configurar Webhooks | Probablemente no haga falta — ver abajo |
-| 2 | Registrar tu número de teléfono de WhatsApp | ⬅ el trámite de Coexistence |
+| 2 | Registrar tu número de teléfono de WhatsApp | ❌ **no sirve** — es el alta común, sin coexistencia y scopeada a la WABA de prueba |
 | 3 | **Añadir un método de pago** | ⚠️ **nuevo** |
 | 4 | Enviar un mensaje | La prueba final |
 
@@ -804,7 +841,7 @@ Era la preferencia del dueño —un grupo con todos los empleados— y **la Clou
 #### Fase 1 — Preparar (no afecta a producción)
 
 1. ~~**Cargar el método de pago en la WABA real.**~~ ✅ **Hecho el 11/8** — MasterCard ···· 2840.
-2. **Registrar el número real** con Coexistence, desde *Paso 2. Configuración de producción*. Incluye verificarlo con un código.
+2. **Registrar el número real** con Coexistence **a través del proveedor** (Dualhook). No es por *Paso 2* del Developer Console — ver *Coexistence — no es self-service*. Incluye verificarlo con un código, con el dueño y el celular presentes.
 3. **Comprobar que cambió de plataforma**:
    ```
    npx tsx scripts/verificar-whatsapp.ts
@@ -848,7 +885,7 @@ Lo único que no tiene vuelta atrás simple es el registro del número en la Clo
 ### El orden
 
 1. ~~**Método de pago** en la WABA real.~~ ✅ hecho el 11/8.
-2. **Registrar el número real** (`+54 9 343 451-2995`) con **Coexistence**. Requisitos: el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) y hay que verificarlo con un código — hoy figura `code_verification_status: NOT_VERIFIED`. Al terminar, `platform_type` tiene que pasar de `ON_PREMISE` a `CLOUD_API`; se comprueba con `scripts/verificar-whatsapp.ts`.
+2. **Registrar el número real** (`+54 9 343 451-2995`) con **Coexistence, vía Dualhook** — no se puede por cuenta propia. Requisitos: el número tiene que estar en la app de **WhatsApp Business** (no en WhatsApp común) en versión **2.24.17 o superior**, y hay que verificarlo con un código — hoy figura `code_verification_status: NOT_VERIFIED`. Al terminar, `platform_type` tiene que pasar de `ON_PREMISE` a `CLOUD_API`; se comprueba con `scripts/verificar-whatsapp.ts`.
 3. **Crear las 9 plantillas** en la WABA real: `npx tsx scripts/clonar-plantillas.ts --confirmar`. Recién funciona después del paso 2.
 4. **Esperar la aprobación** de las 9.
 5. **Compartir el calendario real** con `reservas@los-gladiolos.iam.gserviceaccount.com`, con permiso de "Hacer cambios en los eventos".
